@@ -31,7 +31,6 @@ buildscript {
     //构建脚本依赖
     dependencies {
         classpath "com.netflix.nebula:gradle-extra-configurations-plugin:$version_nebula"
-//        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$version_kotlinVersion"
     }
 
 }
@@ -42,7 +41,6 @@ allprojects {
 
     apply plugin: 'java'
     apply plugin: 'nebula.optional-base'
-    //apply plugin: 'kotlin'
 
     group project_group_id
     version project_version
@@ -52,20 +50,6 @@ allprojects {
 
     //encoding
     [compileJava, compileTestJava, javadoc]*.options*.encoding = "UTF-8"
-
-    //kotlin compile
-    //compileKotlin {
-    //    kotlinOptions {
-    //        jvmTarget = "1.6"
-    //    }
-    //}
-
-    //kotlin test compile
-    //compileTestKotlin {
-    //    kotlinOptions {
-    //        jvmTarget = "1.6"
-    //    }
-    //}
 
     //工程依赖仓库
     repositories {
@@ -85,9 +69,6 @@ allprojects {
 
 configure(subprojects.findAll { it.name.startsWith('glaciion') }) {
 
-    sourceCompatibility = 1.7
-    targetCompatibility = 1.7
-
 }
 
 //其他工程通用配置////////////////////////////////////////////////////////////////////////////////////
@@ -95,8 +76,6 @@ configure(subprojects.findAll { it.name.startsWith('glaciion') }) {
 configure(subprojects.findAll { !it.name.startsWith('glaciion') }) {
 
 }
-
-
 
 //其他////////////////////////////////////////////////////////////////////////////////////
 

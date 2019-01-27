@@ -19,20 +19,382 @@
 
 package com.github.shepherdviolet.glaciion.core;
 
+import com.github.shepherdviolet.glaciion.api.annotation.SingleServiceInterface;
+import com.github.shepherdviolet.glaciion.api.exceptions.IllegalDefinitionException;
+import com.github.shepherdviolet.glaciion.api.exceptions.IllegalImplementationException;
+import com.github.shepherdviolet.glaciion.api.interfaces.CloseableImplementation;
+import com.github.shepherdviolet.glaciion.api.interfaces.InitializableImplementation;
+import com.github.shepherdviolet.glaciion.api.interfaces.SpiLogger;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.github.shepherdviolet.glaciion.core.Constants.*;
+
 /**
- * The loader for single-service mode.
- * single-service mode is used when only one service implementation is required.
+ * <p>Glaciion: An implementation of Java Service Provider Interface</p>
+ *
+ * <p>The loader for single-service mode.
+ * single-service mode is used when only one service implementation is required.</p>
  *
  * @param <T> Interface of service
  * @author S.Violet
  */
-public class SingleServiceLoader<T> {
+public class SingleServiceLoader<T> implements Closeable {
 
-    SingleServiceLoader() {
+    private static final SpiLogger LOGGER = LogUtils.getLogger();
+
+    private static final ConcurrentHashMap<String, CloseableConcurrentHashMap<Class<?>, SingleServiceLoader<?>>> LOADER_CACHE = new ConcurrentHashMap<>();
+
+    /**
+     * Load single service by DEFAULT classloader.
+     * single-service mode is used when only one service implementation is required.
+     * @param interfaceClass Interface type to load
+     * @return SingleServiceLoader (Cached)
+     */
+    public static <T> SingleServiceLoader<T> load(Class<T> interfaceClass){
+        return load(interfaceClass, ClassUtils.getDefaultClassLoader());
     }
 
-    public T getService(){
-        return null;
+    /**
+     * Load single service by custom classloader.
+     * single-service mode is used when only one service implementation is required.
+     * @param interfaceClass Interface type to load
+     * @param classLoader Custom classloader
+     * @return SingleServiceLoader (Cached)
+     */
+    public static <T> SingleServiceLoader<T> load(Class<T> interfaceClass, ClassLoader classLoader){
+        //preload
+        if (FLAG_PRELOAD_AUTO) {
+            PreLoader.preload(classLoader);
+        }
+        //create loader
+        return createLoader(interfaceClass, classLoader);
+    }
+
+    /**
+     * Create loader (without preload)
+     */
+    static <T> SingleServiceLoader<T> createLoader(Class<T> interfaceClass, ClassLoader classLoader) {
+        if (interfaceClass == null) {
+            throw new IllegalArgumentException("? | interfaceClass is null");
+        }
+        //get loaders from cache
+        String classloaderId = String.valueOf(classLoader);
+        CloseableConcurrentHashMap<Class<?>, SingleServiceLoader<?>> loaders = LOADER_CACHE.get(classloaderId);
+        if (loaders == null) {
+            loaders = new CloseableConcurrentHashMap<>(32);
+            CloseableConcurrentHashMap<Class<?>, SingleServiceLoader<?>> previous = LOADER_CACHE.putIfAbsent(classloaderId, loaders);
+            if (previous != null) {
+                loaders = previous;
+            }
+        }
+        //get loader from cache
+        SingleServiceLoader<T> loader = (SingleServiceLoader<T>) loaders.get(interfaceClass);
+        if (loader == null) {
+            Map<Class<?>, Boolean> interfaces = InterfaceLoader.get(classLoader);
+            //check if the interface has registered
+            if (!interfaces.containsKey(interfaceClass)) {
+                LOGGER.error("? | Interface " + interfaceClass.getName() +
+                        " must be defined in " + PATH_INTERFACES + " file, See doc:" + LOG_HOME_PAGE, null);
+                throw new IllegalDefinitionException("? | Interface " + interfaceClass.getName() +
+                        " must be defined in " + PATH_INTERFACES + " file, See doc:" + LOG_HOME_PAGE);
+            }
+            //create loader
+            loader = new SingleServiceLoader<>(interfaceClass, classLoader);
+            SingleServiceLoader<T> previous = (SingleServiceLoader<T>) loaders.putIfAbsent(interfaceClass, loader);
+            if (previous != null) {
+                loader = previous;
+            }
+        } else if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(loader.loaderId + " | Single-service Loader get from cache! " +
+                    interfaceClass.getName() + ", caller:" + CommonUtils.getCaller(SingleServiceLoader.class) +
+                    ", classloader:" + classloaderId, null);
+        }
+        return loader;
+    }
+
+    /**
+     * Remove all loaders of specified classloader from cache
+     * @param classLoader classloader
+     */
+    public static Map<Class<?>, SingleServiceLoader<?>> uninstall(ClassLoader classLoader) {
+        String classloaderId = String.valueOf(classLoader);
+        CloseableConcurrentHashMap<Class<?>, SingleServiceLoader<?>> loaders = LOADER_CACHE.remove(classloaderId);
+        //close
+        if (loaders != null) {
+            try {
+                loaders.close();
+            } catch (IOException ignore) {
+            }
+        }
+        return loaders;
+    }
+
+    /**
+     * Remove all loaders of DEFAULT classloader from cache
+     */
+    public static Map<Class<?>, SingleServiceLoader<?>> uninstallDefaultClassloader() {
+        return uninstall(ClassUtils.getDefaultClassLoader());
+    }
+
+    private String loaderId = CommonUtils.generateLoaderId();
+    private Class<T> interfaceClass;
+    private ClassLoader classLoader;
+
+    private Class<T> implementationClass;
+    private PropertiesInjector propertiesInjector;
+    private T instance;
+
+    private volatile boolean initialized = false;
+    private volatile boolean cached = false;
+    private volatile AtomicBoolean closed = new AtomicBoolean(false);
+
+    /**
+     * Load single service by custom classloader.
+     * single-service mode is used when only one service implementation is required.
+     * @param interfaceClass Interface type to load
+     * @param classLoader Custom classloader
+     */
+    private SingleServiceLoader(Class<T> interfaceClass, ClassLoader classLoader) {
+        this.interfaceClass = interfaceClass;
+        this.classLoader = classLoader;
+        load();
+    }
+
+    /**
+     * Get the service instance
+     * @return Service instance (Cached), Nullable
+     */
+    public T get(){
+        if (!initialized) {
+            throw new IllegalStateException(loaderId + " | The loader has not been initialized yet");
+        }
+        if (!cached) {
+            synchronized (this) {
+                if (!cached) {
+                    instantiate();
+                    cached = true;
+                }
+            }
+        }
+        return instance;
+    }
+
+    @Override
+    public String toString() {
+        return "[single-service] " + interfaceClass.getName() + " :\n  " +
+                (implementationClass != null ? implementationClass.getName() : "No implementation") +
+                (propertiesInjector != null ? " " + propertiesInjector : "");
+    }
+
+    /**
+     * Set the flag of the implementation class that implements the 'CloseableImplementation' interface to true
+     */
+    @Override
+    public void close() throws IOException {
+        closed.set(true);
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(loaderId + " | Single-service Loader Closed!", null);
+        }
+    }
+
+    /**
+     * instantiate instance
+     */
+    private void instantiate() {
+        //no definition
+        if (implementationClass == null) {
+            return;
+        }
+        //create instance
+        T instance;
+        try {
+            instance = InstantiationUtils.newInstance(implementationClass);
+        } catch (Exception e) {
+            LOGGER.error(loaderId + " | Error while instantiating single-service class " +
+                    implementationClass.getName() + " (" + interfaceClass.getName() + ")", e);
+            throw new IllegalImplementationException(loaderId + " | Error while instantiating single-service class " +
+                    implementationClass.getName() + " (" + interfaceClass.getName() + ")", e);
+        }
+        //inject properties
+        if (propertiesInjector != null) {
+            try {
+                propertiesInjector.inject(instance, loaderId);
+            } catch (Exception e) {
+                LOGGER.error(loaderId + " | Error while injecting properties to single-service " +
+                        implementationClass.getName() + " (" + interfaceClass.getName() + ")", e);
+                throw new RuntimeException(loaderId + " | Error while injecting properties to single-service " +
+                        implementationClass.getName() + " (" + interfaceClass.getName() + ")", e);
+            }
+        }
+        //set close flag
+        if (instance instanceof CloseableImplementation) {
+            ((CloseableImplementation) instance).setCloseFlag(closed);
+        }
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(loaderId + " | Single-service Instance Created! " +
+                    interfaceClass.getName() + ", impl:" + implementationClass.getName() +
+                    (propertiesInjector != null ? ", prop:" + propertiesInjector : ""), null);
+        }
+        //creating completed
+        if (instance instanceof InitializableImplementation) {
+            ((InitializableImplementation) instance).onServiceCreated();
+        }
+        //set instance
+        this.instance = instance;
+    }
+
+    /**
+     * loading process
+     */
+    private void load(){
+        String selectReason;
+        //log
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(loaderId + " | Single-service Loader Loading Start: " + interfaceClass.getName() +
+                    ", caller:" + CommonUtils.getCaller(SingleServiceLoader.class) + ", classloader:" +
+                    classLoader + ", doc:" + LOG_HOME_PAGE, null);
+        }
+        //check is interface
+        if (!interfaceClass.isInterface()) {
+            LOGGER.error(loaderId + " | " + interfaceClass.getName() +
+                    " must be an interface", null);
+            throw new IllegalArgumentException(loaderId + " | " + interfaceClass.getName() +
+                    " must be an interface");
+        }
+        //check annotation
+        SingleServiceInterface annotation = interfaceClass.getAnnotation(SingleServiceInterface.class);
+        if (annotation == null) {
+            LOGGER.error(loaderId + " | " + interfaceClass.getName() +
+                    " must have an annotation '@SingleServiceInterface'", null);
+            throw new IllegalArgumentException(loaderId + " | " + interfaceClass.getName() +
+                    " must have an annotation '@SingleServiceInterface'");
+        }
+        //check vm option: -Dglaciion.select.<interface-class>
+        String selectedImplClassName = System.getProperty(VMOPT_SELECT + interfaceClass.getName(), null);
+        if (selectedImplClassName != null) {
+            //load selected
+            selectReason = "-D" + VMOPT_SELECT + interfaceClass.getName() + "=" + selectedImplClassName;
+            loadImplementation(selectedImplClassName,selectReason);
+        } else {
+            //load from definitions
+            selectReason = loadDefinitions();
+        }
+        //no properties
+        if (implementationClass == null) {
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(loaderId + " | Single-service Loader Loading Failed! " + interfaceClass.getName() +
+                        ", implementation not found", null);
+            }
+            initialized = true;
+            return;
+        }
+        //load properties
+        propertiesInjector = PropertiesLoader.load(implementationClass, classLoader, loaderId);
+        //log
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(loaderId + " | Single-service Loader Loading Completed! " +
+                    interfaceClass.getName() + ", impl:" + implementationClass.getName() +
+                    (propertiesInjector != null ? ", prop:" + propertiesInjector : "") +
+                    ", impl selected by " + selectReason +
+                    (propertiesInjector != null ? ", prop selected by " + propertiesInjector.getSelectReason() : ""), null);
+        }
+        initialized = true;
+    }
+
+    /**
+     * load definition files
+     */
+    private String loadDefinitions() {
+        //load definitions
+        List<SingleDefinition> definitions = DefinitionLoader.loadSingleDefinitions(interfaceClass.getName(), classLoader, loaderId);
+        //no definition
+        if (definitions.size() <= 0) {
+            LOGGER.warn(loaderId + " | No definitions found in classpath, no single-service will be loaded from this loader", null);
+            return null;
+        }
+        //only one
+        if (definitions.size() == 1) {
+            SingleDefinition definition = definitions.get(0);
+            String selectReason = "priority " + definition.getPriority() + ", url: " + definition.getUrl();
+            loadImplementation(definition.getImplementationType(), selectReason);
+            return selectReason;
+        }
+        //more than one
+        //sort, larger first
+        Collections.sort(definitions, new Comparator<SingleDefinition>() {
+            @Override
+            public int compare(SingleDefinition o1, SingleDefinition o2) {
+                int priorityCompare = o2.getPriority() - o1.getPriority();
+                if (priorityCompare != 0) {
+                    return priorityCompare;
+                }
+                return o1.calculateImplementationHash() - o2.calculateImplementationHash();
+            }
+        });
+        //select first (highest priority)
+        SingleDefinition selectedDefinition = definitions.get(0);
+        int selectedPriority = selectedDefinition.getPriority();
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(loaderId + " | Candidate: priority:" + selectedDefinition.getPriority() +
+                    " impl:" + selectedDefinition.getImplementationType() + " url:" + selectedDefinition.getUrl(), null);
+        }
+        //check the others
+        for (int i = 1; i < definitions.size(); i++) {
+            SingleDefinition definition = definitions.get(i);
+            if (definition.getPriority() >= selectedPriority){
+                //duplicate priority
+                if (!definition.getImplementationType().equals(selectedDefinition.getImplementationType())) {
+                    //duplicate priority with different implementation
+                    LOGGER.warn(loaderId + " | WARNING!!! Duplicate priority '" + selectedPriority + "' of two implementation '" +
+                            selectedDefinition.getImplementationType() + "' '" + definition.getImplementationType() +
+                            "', The first one will be adopted, the second one will be abandoned, url1: " +
+                            selectedDefinition.getUrl() + ", url2:" + definition.getUrl(), null);
+                }
+            } else if (!LOGGER.isDebugEnabled()) {
+                //lower priority (if log level is below debug, break)
+                break;
+            }
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(loaderId + " | Candidate: priority:" + definition.getPriority() +
+                        " impl:" + definition.getImplementationType() + " url:" + definition.getUrl(), null);
+            }
+        }
+        //load selected
+        String selectReason = "priority " + selectedDefinition.getPriority() + ", url: " + selectedDefinition.getUrl();
+        loadImplementation(selectedDefinition.getImplementationType(), selectReason);
+        return selectReason;
+    }
+
+    /**
+     * load implementation class
+     */
+    private void loadImplementation(String implementationClassName, String selectReason) {
+        try {
+            //load class
+            Class<?> implClass = ClassUtils.loadClass(implementationClassName, classLoader);
+            if (!interfaceClass.isAssignableFrom(implClass)) {
+                LOGGER.error(loaderId + " | The implementation class " + implementationClassName +
+                        " is not an instance of " + interfaceClass.getName() + ", which is selected by " + selectReason, null);
+                throw new IllegalImplementationException(loaderId + " | The implementation class " + implementationClassName +
+                        " is not an instance of " + interfaceClass.getName() + ", which is selected by " + selectReason, null);
+            }
+            //ok
+            this.implementationClass = (Class<T>) implClass;
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(loaderId + " | Selected: " + implementationClassName +
+                        ", selected by " + selectReason, null);
+            }
+        } catch (ClassNotFoundException e) {
+            LOGGER.error(loaderId + " | Implementation class " + implementationClassName +
+                    " not found, which is selected by " + selectReason, e);
+            throw new IllegalDefinitionException(loaderId + " | Implementation class " + implementationClassName +
+                    " not found, which is selected by " + selectReason, e);
+        }
     }
 
 }

@@ -19,36 +19,529 @@
 
 package com.github.shepherdviolet.glaciion.core;
 
-import java.util.List;
+import com.github.shepherdviolet.glaciion.api.annotation.ImplementationName;
+import com.github.shepherdviolet.glaciion.api.annotation.ImplementationPriority;
+import com.github.shepherdviolet.glaciion.api.annotation.MultipleServiceInterface;
+import com.github.shepherdviolet.glaciion.api.exceptions.IllegalDefinitionException;
+import com.github.shepherdviolet.glaciion.api.exceptions.IllegalImplementationException;
+import com.github.shepherdviolet.glaciion.api.interfaces.CloseableImplementation;
+import com.github.shepherdviolet.glaciion.api.interfaces.InitializableImplementation;
+import com.github.shepherdviolet.glaciion.api.interfaces.SpiLogger;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.github.shepherdviolet.glaciion.core.Constants.*;
 
 /**
- * The loader for multiple-service mode.
- * multiple-service mode is used to load multiple services (has name and ordered).
+ * <p>Glaciion: An implementation of Java Service Provider Interface</p>
+ *
+ * <p>The loader for multiple-service mode.
+ * multiple-service mode is used to load multiple services (has name and ordered).</p>
  *
  * @param <T> Interface of service
  * @author S.Violet
  */
-public class MultipleServiceLoader<T> {
+public class MultipleServiceLoader<T> implements Closeable {
 
-    MultipleServiceLoader() {
+    private static final SpiLogger LOGGER = LogUtils.getLogger();
+
+    private static final ConcurrentHashMap<String, CloseableConcurrentHashMap<Class<?>, MultipleServiceLoader<?>>> LOADER_CACHE = new ConcurrentHashMap<>();
+
+    /**
+     * Load multiple services by DEFAULT classloader.
+     * multiple-service mode is used to load multiple services (has name and ordered).
+     * @param interfaceClass Interface type to load
+     * @return MultipleServiceLoader (Cached)
+     */
+    public static <T> MultipleServiceLoader<T> load(Class<T> interfaceClass){
+        return load(interfaceClass, ClassUtils.getDefaultClassLoader());
     }
 
     /**
-     * Get the service with the specified name.
+     * Load multiple services by custom classloader.
+     * multiple-service mode is used to load multiple services (has name and ordered).
+     * @param interfaceClass Interface type to load
+     * @param classLoader Custom classloader
+     * @return MultipleServiceLoader (Cached)
+     */
+    public static <T> MultipleServiceLoader<T> load(Class<T> interfaceClass, ClassLoader classLoader){
+        //preload
+        if (FLAG_PRELOAD_AUTO) {
+            PreLoader.preload(classLoader);
+        }
+        //create loader
+        return createLoader(interfaceClass, classLoader);
+    }
+
+    /**
+     * Create loader (without preload)
+     */
+    static <T> MultipleServiceLoader<T> createLoader(Class<T> interfaceClass, ClassLoader classLoader) {
+        if (interfaceClass == null) {
+            throw new IllegalArgumentException("? | interfaceClass is null");
+        }
+        //get loaders from cache
+        String classloaderId = String.valueOf(classLoader);
+        CloseableConcurrentHashMap<Class<?>, MultipleServiceLoader<?>> loaders = LOADER_CACHE.get(classloaderId);
+        if (loaders == null) {
+            loaders = new CloseableConcurrentHashMap<>(32);
+            CloseableConcurrentHashMap<Class<?>, MultipleServiceLoader<?>> previous = LOADER_CACHE.putIfAbsent(classloaderId, loaders);
+            if (previous != null) {
+                loaders = previous;
+            }
+        }
+        //get loader from cache
+        MultipleServiceLoader<T> loader = (MultipleServiceLoader<T>) loaders.get(interfaceClass);
+        if (loader == null) {
+            Map<Class<?>, Boolean> interfaces = InterfaceLoader.get(classLoader);
+            //check if the interface has registered
+            if (!interfaces.containsKey(interfaceClass)) {
+                LOGGER.error("? | Interface " + interfaceClass.getName() +
+                        " must be defined in " + PATH_INTERFACES + " file, See doc:" + LOG_HOME_PAGE, null);
+                throw new IllegalDefinitionException("? | Interface " + interfaceClass.getName() +
+                        " must be defined in " + PATH_INTERFACES + " file, See doc:" + LOG_HOME_PAGE);
+            }
+            //create loader
+            loader = new MultipleServiceLoader<>(interfaceClass, classLoader);
+            MultipleServiceLoader<T> previous = (MultipleServiceLoader<T>) loaders.putIfAbsent(interfaceClass, loader);
+            if (previous != null) {
+                loader = previous;
+            }
+        } else if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(loader.loaderId + " | Multiple-service Loader get from cache! " +
+                    interfaceClass.getName() + ", caller:" + CommonUtils.getCaller(MultipleServiceLoader.class) +
+                    ", classloader:" + classloaderId, null);
+        }
+        return loader;
+    }
+
+    /**
+     * Remove all loaders of specified classloader from cache
+     * @param classLoader classloader
+     */
+    public static Map<Class<?>, MultipleServiceLoader<?>> uninstall(ClassLoader classLoader) {
+        String classloaderId = String.valueOf(classLoader);
+        CloseableConcurrentHashMap<Class<?>, MultipleServiceLoader<?>> loaders = LOADER_CACHE.remove(classloaderId);
+        //close
+        if (loaders != null) {
+            try {
+                loaders.close();
+            } catch (IOException ignore) {
+            }
+        }
+        return loaders;
+    }
+
+    /**
+     * Remove all loaders of DEFAULT classloader from cache
+     */
+    public static Map<Class<?>, MultipleServiceLoader<?>> uninstallDefaultClassloader() {
+        return uninstall(ClassUtils.getDefaultClassLoader());
+    }
+
+    private String loaderId = CommonUtils.generateLoaderId();
+    private Class<T> interfaceClass;
+    private ClassLoader classLoader;
+
+    private List<InstanceBuilder<T>> instanceBuilders;
+    private List<T> instanceList = new ArrayList<>(16);
+    private Map<String, T> instanceMap = new HashMap<>(16);
+
+    private volatile boolean initialized = false;
+    private volatile boolean cached = false;
+    private volatile AtomicBoolean closed = new AtomicBoolean(false);
+
+    private MultipleServiceLoader(Class<T> interfaceClass, ClassLoader classLoader) {
+        this.interfaceClass = interfaceClass;
+        this.classLoader = classLoader;
+        load();
+    }
+
+    /**
+     * Get the service instance with the specified name.
      * If there are two services with the same name, an exception will be thrown.
      * @param name The name of service implementation (Specified by annotation 'ImplementationName')
-     * @return Service instance (cached)
+     * @return Service instance (Cached), Nullable
      */
-    public T getService(String name) {
-        return null;
+    public T get(String name) {
+        if (!initialized) {
+            throw new IllegalStateException(loaderId + " | The loader has not been initialized yet");
+        }
+        if (!cached) {
+            synchronized (this) {
+                if (!cached) {
+                    instantiate();
+                    cached = true;
+                }
+            }
+        }
+        return instanceMap.get(name);
     }
 
     /**
-     * Get all services, sorted by priority (Specified by annotation 'ImplementationPriority')
-     * @return Service instances (cached)
+     * Get all service instances, sorted by priority (Specified by annotation 'ImplementationPriority')
+     * @return Service instances (ArrayList, Cached), Not null
      */
-    public List<T> getServices(){
-        return null;
+    public List<T> getAll(){
+        if (!initialized) {
+            throw new IllegalStateException(loaderId + " | The loader has not been initialized yet");
+        }
+        if (!cached) {
+            synchronized (this) {
+                if (!cached) {
+                    instantiate();
+                    cached = true;
+                }
+            }
+        }
+        return instanceList;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder("[multiple-service] ");
+        stringBuilder.append(interfaceClass.getName()).append(" :");
+        if (instanceBuilders != null) {
+            for (InstanceBuilder instanceBuilder : instanceBuilders) {
+                stringBuilder.append("\n  ");
+                stringBuilder.append(instanceBuilder.implementationClass);
+                if (instanceBuilder.isNameValid) {
+                    stringBuilder.append(" ");
+                    stringBuilder.append(instanceBuilder.name);
+                }
+                if (instanceBuilder.propertiesInjector != null) {
+                    stringBuilder.append(" ");
+                    stringBuilder.append(instanceBuilder.propertiesInjector);
+                }
+            }
+        } else {
+            stringBuilder.append("\nNo implementation");
+        }
+        return stringBuilder.toString();
+    }
+
+    /**
+     * Set the flag of the implementation class that implements the 'CloseableImplementation' interface to true
+     */
+    @Override
+    public void close() throws IOException {
+        closed.set(true);
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(loaderId + " | Multiple-service Loader Closed!", null);
+        }
+    }
+
+    /**
+     * instantiate instances
+     */
+    private void instantiate() {
+        //no definition
+        if (instanceBuilders == null) {
+            return;
+        }
+        int index = 0;
+        for (InstanceBuilder<T> instanceBuilder : instanceBuilders) {
+            //create instance
+            T instance;
+            try {
+                instance = InstantiationUtils.newInstance(instanceBuilder.implementationClass);
+            } catch (Exception e) {
+                LOGGER.error(loaderId + " | Error while instantiating multiple-service class " +
+                        instanceBuilder.implementationClass.getName() + " (" + interfaceClass.getName() + ")", e);
+                throw new IllegalImplementationException(loaderId + " | Error while instantiating multiple-service class " +
+                        instanceBuilder.implementationClass.getName() + " (" + interfaceClass.getName() + ")", e);
+            }
+            //inject properties
+            if (instanceBuilder.propertiesInjector != null) {
+                try {
+                    instanceBuilder.propertiesInjector.inject(instance, loaderId);
+                } catch (Exception e) {
+                    LOGGER.error(loaderId + " | Error while injecting properties to multiple-service " +
+                            instanceBuilder.implementationClass.getName() + " (" + interfaceClass.getName() + ")", e);
+                    throw new IllegalImplementationException(loaderId + " | Error while injecting properties to multiple-service " +
+                            instanceBuilder.implementationClass.getName() + " (" + interfaceClass.getName() + ")", e);
+                }
+            }
+            //set close flag
+            if (instance instanceof CloseableImplementation) {
+                ((CloseableImplementation) instance).setCloseFlag(closed);
+            }
+            //log
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(loaderId + " | Multiple-service Created: " + index++ + " " +
+                        instanceBuilder.implementationClass.getName() +
+                        (instanceBuilder.isNameValid ? ", bind name:" + instanceBuilder.name : "") +
+                        (instanceBuilder.propertiesInjector != null ? ", prop:" + instanceBuilder.propertiesInjector : ""), null);
+            }
+            //creating completed
+            if (instance instanceof InitializableImplementation) {
+                ((InitializableImplementation) instance).onServiceCreated();
+            }
+            //add to list
+            instanceList.add(instance);
+            //put to map
+            if (instanceBuilder.isNameValid) {
+                instanceMap.put(instanceBuilder.name, instance);
+            }
+        }
+
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(loaderId + " | Multiple-service Instances Created! " + interfaceClass.getName() +
+                    ", " + instanceBuilders.size() + " instances", null);
+        }
+
+    }
+
+    /**
+     * loading process
+     */
+    private void load(){
+        //log
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(loaderId + " | Multiple-service Loader Loading Start: " + interfaceClass.getName() +
+                    ", caller:" + CommonUtils.getCaller(MultipleServiceLoader.class) + ", classloader:" +
+                    classLoader + ", doc:" + LOG_HOME_PAGE, null);
+        }
+        //check is interface
+        if (!interfaceClass.isInterface()) {
+            LOGGER.error(loaderId + " | " + interfaceClass.getName() +
+                    " must be an interface", null);
+            throw new IllegalArgumentException(loaderId + " | " + interfaceClass.getName() +
+                    " must be an interface");
+        }
+        //check annotation
+        MultipleServiceInterface annotation = interfaceClass.getAnnotation(MultipleServiceInterface.class);
+        if (annotation == null) {
+            LOGGER.error(loaderId + " | " + interfaceClass.getName() +
+                    " must have an annotation '@MultipleServiceInterface'", null);
+            throw new IllegalArgumentException(loaderId + " | " + interfaceClass.getName() +
+                    " must have an annotation '@MultipleServiceInterface'");
+        }
+        //load definitions
+        List<MultipleDefinition> definitions = DefinitionLoader.loadMultipleDefinitions(interfaceClass.getName(), classLoader, loaderId);
+        //no definition
+        if (definitions.size() <= 0) {
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(loaderId + " | Multiple-service Loader Loading Failed! " + interfaceClass.getName() +
+                        ", no implementation found in classpath", null);
+            }
+            initialized = true;
+            return;
+        }
+        //sort
+        Collections.sort(definitions, new Comparator<MultipleDefinition>() {
+            @Override
+            public int compare(MultipleDefinition o1, MultipleDefinition o2) {
+                int hashCompare = o1.calculateImplementationHash() - o2.calculateImplementationHash();
+                if (hashCompare != 0) {
+                    return hashCompare;
+                }
+                int rankCompare = o2.getRank() - o1.getRank();
+                if (rankCompare != 0) {
+                    return rankCompare;
+                }
+                return (o2.isDisable() ? 1 : 0) - (o1.isDisable() ? 1 : 0);
+            }
+        });
+        //check vm option
+        String removedImplClassNames = System.getProperty(VMOPT_REMOVE + interfaceClass.getName(), null);
+        Set<String> removedSet = new HashSet<>();
+        if (removedImplClassNames != null) {
+            String[] removes = removedImplClassNames.split(",");
+            for (String remove : removes) {
+                removedSet.add(remove);
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace(loaderId + " | VM Option 'remove': " + remove, null);
+                }
+            }
+        }
+        //check if enabled
+        List<MultipleDefinition> enabledDefinitions = new LinkedList<>();
+        List<MultipleDefinition> disabledDefinitions = new LinkedList<>();
+        List<MultipleDefinition> removedDefinitions = new LinkedList<>();
+        String previousImpl = "";
+        for (MultipleDefinition definition : definitions) {
+            boolean first = false;
+            //the first one after classname changed will be adopted
+            if (!previousImpl.equals(definition.getImplementationType())) {
+                //record previous classname
+                previousImpl = definition.getImplementationType();
+                //check
+                if (removedSet.contains(definition.getImplementationType())) {
+                    //removed
+                    removedDefinitions.add(definition);
+                } else if (definition.isDisable()) {
+                    //disabled
+                    disabledDefinitions.add(definition);
+                } else {
+                    //enabled
+                    enabledDefinitions.add(definition);
+                }
+                first = true;
+            }
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(loaderId + " | Candidate: " + (first ? "* " : "  ") +
+                        (definition.isDisable() ? "-" : "+") + definition.getRank() + " " +
+                        definition.getImplementationType() + ", url:" + definition.getUrl(), null);
+            }
+        }
+        //print removed
+        for (MultipleDefinition definition : removedDefinitions) {
+            if (LOGGER.isWarnEnabled()) {
+                LOGGER.warn(loaderId + " | Removed: " + definition.getImplementationType() +
+                        ", removed by -D" + VMOPT_REMOVE + interfaceClass.getName(), null);
+            }
+        }
+        //print disabled
+        for (MultipleDefinition definition : disabledDefinitions) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(loaderId + " | Disabled: " + definition.getImplementationType() +
+                        ", disabled by rank -" + definition.getRank(), null);
+            }
+        }
+        //no definition
+        if (enabledDefinitions.size() <= 0) {
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(loaderId + " | Multiple-service Loader Loading Failed! " + interfaceClass.getName() +
+                        ", no enabled implementation found", null);
+            }
+            initialized = true;
+            return;
+        }
+        //instance builders
+        instanceBuilders = new ArrayList<>(enabledDefinitions.size());
+        //create builders
+        for (MultipleDefinition definition : enabledDefinitions) {
+            String selectReason = "rank +" + definition.getRank() + ", url: " + definition.getUrl();
+            InstanceBuilder<T> instanceBuilder = loadImplementation(definition.getImplementationType(), definition.getUrl(), selectReason);
+            instanceBuilder.propertiesInjector = PropertiesLoader.load(instanceBuilder.implementationClass, classLoader, loaderId);
+            instanceBuilders.add(instanceBuilder);
+        }
+        //sort
+        Collections.sort(instanceBuilders, new Comparator<InstanceBuilder<T>>() {
+            @Override
+            public int compare(InstanceBuilder<T> o1, InstanceBuilder<T> o2) {
+                int priorityCompare = o2.priority - o1.priority;
+                if (priorityCompare != 0) {
+                    return priorityCompare;
+                }
+                return o1.calculateImplementationHash() - o2.calculateImplementationHash();
+            }
+        });
+        //check duplicate names
+        Map<String, InstanceBuilder<T>> nameMap = new HashMap<>(instanceBuilders.size());
+        for (InstanceBuilder<T> instanceBuilder : instanceBuilders) {
+            //check duplicate name
+            InstanceBuilder<T> previousOne;
+            boolean duplicateFlag = false;
+            if (instanceBuilder.name != null && (previousOne = nameMap.get(instanceBuilder.name)) != null) {
+                duplicateFlag = true;
+                LOGGER.warn(loaderId + " | WARNING!!! Duplicate @ImplementationName '" + instanceBuilder.name +
+                        "' of two implementation '" + previousOne.implementationClass.getName() + "' '" +
+                        instanceBuilder.implementationClass.getName() + "', The first one can be get by 'get(String name)'" +
+                        ", the second one can only get by 'getAll()', url1: " + previousOne.url + ", url2:" + instanceBuilder.url, null);
+            }
+            //log
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(loaderId + " | Service Enabled: " + instanceBuilder.implementationClass.getName() +
+                        (instanceBuilder.name != null ? ", name:" + instanceBuilder.name : "") +
+                        (duplicateFlag ? "(duplicated, can't get by name)" : "") +
+                        ", prop:" + instanceBuilder.propertiesInjector +
+                        ", priority:" + instanceBuilder.priority +
+                        ", impl enabled by " + instanceBuilder.enabledReason +
+                        (instanceBuilder.propertiesInjector != null ?
+                                (", prop selected by " + instanceBuilder.propertiesInjector.getSelectReason()) : ""),
+                        null);
+            }
+            //record name
+            if (!duplicateFlag && instanceBuilder.name != null) {
+                //mark as valid name
+                instanceBuilder.isNameValid = true;
+                nameMap.put(instanceBuilder.name, instanceBuilder);
+            }
+        }
+
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(loaderId + " | Multiple-service Loader Loading Completed! " + interfaceClass.getName() +
+                    ", " + instanceBuilders.size() + " implementations", null);
+        }
+        initialized = true;
+    }
+
+    /**
+     * load implementation class
+     */
+    private InstanceBuilder<T> loadImplementation(String implementationClassName, String url, String enabledReason) {
+        try {
+            //load class
+            Class<?> implClass = ClassUtils.loadClass(implementationClassName, classLoader);
+            if (!interfaceClass.isAssignableFrom(implClass)) {
+                LOGGER.error(loaderId + " | The implementation class " + implementationClassName +
+                        " is not an instance of " + interfaceClass.getName() + ", which is enabled by " + enabledReason, null);
+                throw new IllegalImplementationException(loaderId + " | The implementation class " + implementationClassName +
+                        " is not an instance of " + interfaceClass.getName() + ", which is enabled by " + enabledReason, null);
+            }
+            //priority
+            int priority = 0;
+            ImplementationPriority implementationPriority = implClass.getAnnotation(ImplementationPriority.class);
+            if (implementationPriority != null) {
+                priority = implementationPriority.value();
+            }
+            //name
+            String name = null;
+            ImplementationName implementationName = implClass.getAnnotation(ImplementationName.class);
+            if (implementationName != null) {
+                name = implementationName.value();
+            }
+            return new InstanceBuilder<>((Class<T>)implClass, priority, name, url, enabledReason);
+        } catch (ClassNotFoundException e) {
+            LOGGER.error(loaderId + " | Implementation class " + implementationClassName +
+                    " not found, which is enabled by " + enabledReason, e);
+            throw new IllegalDefinitionException(loaderId + " | Implementation class " + implementationClassName +
+                    " not found, which is enabled by " + enabledReason, e);
+        }
+    }
+
+    /**
+     * Information of instance
+     */
+    private static class InstanceBuilder<T> {
+
+        private Class<T> implementationClass;
+        private PropertiesInjector propertiesInjector;
+        private int priority;
+        private String name;
+
+        private String url;
+        private String enabledReason;
+        private Integer implementationHash;
+
+        private boolean isNameValid = false;
+
+        private InstanceBuilder(Class<T> implementationClass, int priority, String name, String url, String enabledReason) {
+            this.implementationClass = implementationClass;
+            this.priority = priority;
+            this.name = name;
+            this.url = url;
+            this.enabledReason = enabledReason;
+        }
+
+        /**
+         * WARNING calculate once only
+         */
+        private int calculateImplementationHash(){
+            if (implementationClass == null) {
+                return 0;
+            }
+            if (implementationHash == null) {
+                implementationHash = implementationClass.getName().hashCode();
+            }
+            return implementationHash;
+        }
     }
 
 }

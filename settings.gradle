@@ -1,2 +1,3 @@
 include ':glaciion-api'
 include ':glaciion-core'
+include ':tests'

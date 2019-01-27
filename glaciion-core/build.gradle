@@ -4,8 +4,7 @@ dependencies {
     compile project(':glaciion-api') { group project_group_id; version project_version }
 
     //optional
+    compile "org.slf4j:slf4j-api:$version_slf4j", optional
 
     //test
-    testImplementation "junit:junit:$version_junit"
-    testImplementation "org.mockito:mockito-core:$version_mockito"
 }
