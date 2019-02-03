@@ -24,6 +24,7 @@ import com.github.shepherdviolet.glaciion.api.exceptions.IllegalDefinitionExcept
 import com.github.shepherdviolet.glaciion.api.exceptions.IllegalImplementationException;
 import com.github.shepherdviolet.glaciion.api.interfaces.CloseableImplementation;
 import com.github.shepherdviolet.glaciion.api.interfaces.InitializableImplementation;
+import com.github.shepherdviolet.glaciion.api.interfaces.ServiceProxy;
 import com.github.shepherdviolet.glaciion.api.interfaces.SpiLogger;
 
 import java.io.Closeable;
@@ -186,7 +187,7 @@ public class SingleServiceLoader<T> implements Closeable {
 
     @Override
     public String toString() {
-        return "[single-service] " + interfaceClass.getName() + " :\n  " +
+        return "[single-service] " + interfaceClass.getName() + " :\n> " +
                 (implementationClass != null ? implementationClass.getName() : "No implementation") +
                 (propertiesInjector != null ? " " + propertiesInjector : "");
     }
@@ -235,9 +236,13 @@ public class SingleServiceLoader<T> implements Closeable {
         if (instance instanceof CloseableImplementation) {
             ((CloseableImplementation) instance).setCloseFlag(closed);
         }
+        //build proxy if needed
+        T finalInstance = ProxyUtils.buildProxyIfNeeded(classLoader, interfaceClass, instance, loaderId);
+        //log
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(loaderId + " | Single-service Instance Created! " +
                     interfaceClass.getName() + ", impl:" + implementationClass.getName() +
+                    (finalInstance instanceof ServiceProxy ? "<CompatByProxy>" : "") +
                     (propertiesInjector != null ? ", prop:" + propertiesInjector : ""), null);
         }
         //creating completed
@@ -245,7 +250,7 @@ public class SingleServiceLoader<T> implements Closeable {
             ((InitializableImplementation) instance).onServiceCreated();
         }
         //set instance
-        this.instance = instance;
+        this.instance = finalInstance;
     }
 
     /**

@@ -20,7 +20,7 @@
 package com.github.shepherdviolet.glaciion.api.exceptions;
 
 /**
- * Illegal definition in file
+ * Glaciion: Illegal definition in file
  *
  * @author S.Violet
  */

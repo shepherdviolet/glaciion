@@ -17,26 +17,26 @@
  * Email: shepherdviolet@163.com
  */
 
-package com.github.shepherdviolet.glaciion.core;
+package com.github.shepherdviolet.glaciion.test;
 
-import com.github.shepherdviolet.glaciion.Glaciion;
-import org.junit.Test;
+import com.github.shepherdviolet.glaciion.api.annotation.ImplementationName;
 
-import static org.junit.Assert.assertEquals;
+@ImplementationName("new")
+public class CompatServiceImpl2 implements CompatService {
 
-/**
- * Test for class PreLoader
- *
- * @author S.Violet
- */
-public class PreLoadTest extends AbstractTest {
+    @Override
+    public String oldMethod(String param) {
+        return param + " handle by new version";
+    }
 
-    @Test
-    public void preload(){
-        Glaciion.preload();
-        assertEquals(
-                Integer.valueOf(313571409),
-                Glaciion.getPreloadCheckSum());
+    @Override
+    public String newMethod(String param) {
+        return param + " handle by newMethod1";
+    }
+
+    @Override
+    public String newMethod(String param1, String param2) {
+        return param1 + param2 + " handle by newMethod2";
     }
 
 }

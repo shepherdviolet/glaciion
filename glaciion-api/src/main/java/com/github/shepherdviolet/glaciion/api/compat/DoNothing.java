@@ -17,26 +17,24 @@
  * Email: shepherdviolet@163.com
  */
 
-package com.github.shepherdviolet.glaciion.core;
+package com.github.shepherdviolet.glaciion.api.compat;
 
-import com.github.shepherdviolet.glaciion.Glaciion;
-import org.junit.Test;
+import com.github.shepherdviolet.glaciion.api.interfaces.CompatibleApproach;
 
-import static org.junit.Assert.assertEquals;
+import java.lang.reflect.Method;
 
 /**
- * Test for class PreLoader
+ * <p>CompatibleApproach: Compatible approach when the old version implementation class does not implements the new version interface method.</p>
+ *
+ * <p>Do nothing and return null if the method invoked</p>
  *
  * @author S.Violet
  */
-public class PreLoadTest extends AbstractTest {
+public class DoNothing implements CompatibleApproach {
 
-    @Test
-    public void preload(){
-        Glaciion.preload();
-        assertEquals(
-                Integer.valueOf(313571409),
-                Glaciion.getPreloadCheckSum());
+    @Override
+    public Object onInvoke(Class<?> serviceInterface, Object serviceInstance, Method method, Object[] args) throws Throwable {
+        return null;
     }
 
 }

@@ -26,6 +26,7 @@ import com.github.shepherdviolet.glaciion.api.exceptions.IllegalDefinitionExcept
 import com.github.shepherdviolet.glaciion.api.exceptions.IllegalImplementationException;
 import com.github.shepherdviolet.glaciion.api.interfaces.CloseableImplementation;
 import com.github.shepherdviolet.glaciion.api.interfaces.InitializableImplementation;
+import com.github.shepherdviolet.glaciion.api.interfaces.ServiceProxy;
 import com.github.shepherdviolet.glaciion.api.interfaces.SpiLogger;
 
 import java.io.Closeable;
@@ -207,8 +208,8 @@ public class MultipleServiceLoader<T> implements Closeable {
         stringBuilder.append(interfaceClass.getName()).append(" :");
         if (instanceBuilders != null) {
             for (InstanceBuilder instanceBuilder : instanceBuilders) {
-                stringBuilder.append("\n  ");
-                stringBuilder.append(instanceBuilder.implementationClass);
+                stringBuilder.append("\n> ");
+                stringBuilder.append(instanceBuilder.implementationClass.getName());
                 if (instanceBuilder.isNameValid) {
                     stringBuilder.append(" ");
                     stringBuilder.append(instanceBuilder.name);
@@ -270,10 +271,12 @@ public class MultipleServiceLoader<T> implements Closeable {
             if (instance instanceof CloseableImplementation) {
                 ((CloseableImplementation) instance).setCloseFlag(closed);
             }
+            //build proxy if needed
+            T finalInstance = ProxyUtils.buildProxyIfNeeded(classLoader, interfaceClass, instance, loaderId);
             //log
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info(loaderId + " | Multiple-service Created: " + index++ + " " +
-                        instanceBuilder.implementationClass.getName() +
+                        instanceBuilder.implementationClass.getName() + (finalInstance instanceof ServiceProxy ? "<CompatByProxy>" : "") +
                         (instanceBuilder.isNameValid ? ", bind name:" + instanceBuilder.name : "") +
                         (instanceBuilder.propertiesInjector != null ? ", prop:" + instanceBuilder.propertiesInjector : ""), null);
             }
@@ -282,10 +285,10 @@ public class MultipleServiceLoader<T> implements Closeable {
                 ((InitializableImplementation) instance).onServiceCreated();
             }
             //add to list
-            instanceList.add(instance);
+            instanceList.add(finalInstance);
             //put to map
             if (instanceBuilder.isNameValid) {
-                instanceMap.put(instanceBuilder.name, instance);
+                instanceMap.put(instanceBuilder.name, finalInstance);
             }
         }
 

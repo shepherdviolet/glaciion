@@ -6,6 +6,7 @@ dependencies {
     //optional
 
     //test
+    testImplementation fileTree(include: ['*.jar'], dir: 'libs')
     testImplementation "junit:junit:$version_junit"
     testImplementation "org.mockito:mockito-core:$version_mockito"
     testImplementation "ch.qos.logback:logback-classic:$version_logback"

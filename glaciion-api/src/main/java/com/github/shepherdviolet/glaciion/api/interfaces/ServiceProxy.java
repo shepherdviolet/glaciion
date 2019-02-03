@@ -17,26 +17,20 @@
  * Email: shepherdviolet@163.com
  */
 
-package com.github.shepherdviolet.glaciion.core;
-
-import com.github.shepherdviolet.glaciion.Glaciion;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
+package com.github.shepherdviolet.glaciion.api.interfaces;
 
 /**
- * Test for class PreLoader
+ * If the service instance is proxied, the proxy class will implements this interface.
  *
  * @author S.Violet
  */
-public class PreLoadTest extends AbstractTest {
+public interface ServiceProxy {
 
-    @Test
-    public void preload(){
-        Glaciion.preload();
-        assertEquals(
-                Integer.valueOf(313571409),
-                Glaciion.getPreloadCheckSum());
-    }
+    /**
+     * You can get the raw service instance by this method, but some methods of it will be abstract (can not invoke)
+     *
+     * @return Raw service instance held by the proxy
+     */
+    Object getRawServiceInstance();
 
 }

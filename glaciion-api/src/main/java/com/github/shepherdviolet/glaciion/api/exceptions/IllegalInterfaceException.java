@@ -17,26 +17,21 @@
  * Email: shepherdviolet@163.com
  */
 
-package com.github.shepherdviolet.glaciion.core;
-
-import com.github.shepherdviolet.glaciion.Glaciion;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
+package com.github.shepherdviolet.glaciion.api.exceptions;
 
 /**
- * Test for class PreLoader
+ * Glaciion: Illegal interface class
  *
  * @author S.Violet
  */
-public class PreLoadTest extends AbstractTest {
+public class IllegalInterfaceException extends RuntimeException {
 
-    @Test
-    public void preload(){
-        Glaciion.preload();
-        assertEquals(
-                Integer.valueOf(313571409),
-                Glaciion.getPreloadCheckSum());
+    public IllegalInterfaceException(String message) {
+        super(message);
+    }
+
+    public IllegalInterfaceException(String message, Throwable cause) {
+        super(message, cause);
     }
 
 }

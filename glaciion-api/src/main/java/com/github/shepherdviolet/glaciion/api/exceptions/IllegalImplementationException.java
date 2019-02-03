@@ -20,7 +20,7 @@
 package com.github.shepherdviolet.glaciion.api.exceptions;
 
 /**
- * Illegal implementation class
+ * Glaciion: Illegal implementation class
  *
  * @author S.Violet
  */
