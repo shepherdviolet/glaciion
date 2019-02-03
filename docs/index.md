@@ -109,6 +109,14 @@ if the service implementation class is not properly designed, it may cause memor
 To accommodate special usages, the service loader is allowed to be uninstalled (removed from the cache).
 ```
 
+* [Upgrade Interface](https://github.com/shepherdviolet/glaciion/blob/master/docs/upgrade-interface.md)
+
+```text
+The interface should be kept as constant as possible. If the method is modified, implementations based on the old version 
+interface will be incompatible. In order to meet the interface upgrade requirements, Glaciion supports adding methods to 
+the interface, and provide a backward compatible approach.
+```
+
 <br>
 
 ## About log

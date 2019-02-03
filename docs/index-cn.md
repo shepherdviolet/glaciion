@@ -101,6 +101,13 @@ dependencies {
 为满足特殊使用场景, 允许卸载服务加载器(从缓存中删除).
 ```
 
+* [升级接口](https://github.com/shepherdviolet/glaciion/blob/master/docs/upgrade-interface-cn.md)
+
+```text
+扩展点接口要尽量保持不变. 如果修改了方法, 基于旧版本实现的服务会不兼容. 为了满足接口升级需求, Glaciion支持在接口中新增方法, 
+并提供一种向下兼容的办法. 
+```
+
 <br>
 
 ## 日志相关
