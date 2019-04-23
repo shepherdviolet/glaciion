@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.github.shepherdviolet.glaciion.core.ClassUtils.getClassLoaderId;
+
 /**
  * Loading interfaces defined in META-INF/glaciion/interfaces
  *
@@ -44,7 +46,7 @@ class InterfaceLoader {
      * Loading interfaces from classloader (with cache)
      */
     static Map<Class<?>, Boolean> get(ClassLoader classLoader){
-        String classloaderId = String.valueOf(classLoader);
+        String classloaderId = getClassLoaderId(classLoader);
         Map<Class<?>, Boolean> interfaces = INTERFACE_CACHE.get(classloaderId);
         if (interfaces == null) {
             interfaces = InterfaceLoader.load(classLoader, "?");
@@ -57,7 +59,7 @@ class InterfaceLoader {
      * remove cache
      */
     static void uninstall(ClassLoader classLoader) {
-        INTERFACE_CACHE.remove(String.valueOf(classLoader));
+        INTERFACE_CACHE.remove(getClassLoaderId(classLoader));
     }
 
     static Map<Class<?>, Boolean> load(ClassLoader classLoader, String loaderId) {

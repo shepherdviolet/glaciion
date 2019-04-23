@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.github.shepherdviolet.glaciion.core.ClassUtils.getClassLoaderId;
 import static com.github.shepherdviolet.glaciion.core.Constants.*;
 
 /**
@@ -64,7 +65,7 @@ public class PreLoader {
      */
     public static void preload(ClassLoader classLoader){
         //get flag
-        String classloaderId = String.valueOf(classLoader);
+        String classloaderId = getClassLoaderId(classLoader);
         Object flag = PRELOAD_FLAGS.get(classloaderId);
         //return if done
         if (flag == DONE) {
@@ -108,7 +109,7 @@ public class PreLoader {
      * Used to determine if the definition has been changed (Someone added or deleted the service without knowing it.)
      */
     public static Integer getCheckSum(ClassLoader classLoader) {
-        String classloaderId = String.valueOf(classLoader);
+        String classloaderId = getClassLoaderId(classLoader);
         return CHECK_SUMS.get(classloaderId);
     }
 

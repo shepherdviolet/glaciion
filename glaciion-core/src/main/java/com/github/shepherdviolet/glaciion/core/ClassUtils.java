@@ -31,6 +31,13 @@ import static com.github.shepherdviolet.glaciion.core.Constants.*;
 
 class ClassUtils {
 
+    static String getClassLoaderId(ClassLoader classLoader){
+        if (classLoader == null) {
+            return "null";
+        }
+        return classLoader.getClass().getName() + "@" + classLoader.hashCode();
+    }
+
     /**
      * Get current classloader (classloader of glaciion)
      * @return nullable

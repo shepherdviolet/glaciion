@@ -35,6 +35,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.github.shepherdviolet.glaciion.core.ClassUtils.getClassLoaderId;
 import static com.github.shepherdviolet.glaciion.core.Constants.*;
 
 /**
@@ -86,7 +87,7 @@ public class MultipleServiceLoader<T> implements Closeable {
             throw new IllegalArgumentException("? | interfaceClass is null");
         }
         //get loaders from cache
-        String classloaderId = String.valueOf(classLoader);
+        String classloaderId = getClassLoaderId(classLoader);
         CloseableConcurrentHashMap<Class<?>, MultipleServiceLoader<?>> loaders = LOADER_CACHE.get(classloaderId);
         if (loaders == null) {
             loaders = new CloseableConcurrentHashMap<>(32);
@@ -125,7 +126,7 @@ public class MultipleServiceLoader<T> implements Closeable {
      * @param classLoader classloader
      */
     public static Map<Class<?>, MultipleServiceLoader<?>> uninstall(ClassLoader classLoader) {
-        String classloaderId = String.valueOf(classLoader);
+        String classloaderId = getClassLoaderId(classLoader);
         CloseableConcurrentHashMap<Class<?>, MultipleServiceLoader<?>> loaders = LOADER_CACHE.remove(classloaderId);
         //close
         if (loaders != null) {
