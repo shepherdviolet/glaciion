@@ -1,4 +1,4 @@
-# Glaciion 1.0
+# Glaciion 1.2
 
 * A library of Java Service Provider Interface
 * Git: https://github.com/shepherdviolet/glaciion
