@@ -295,10 +295,23 @@ class DefinitionLoader {
 
     private interface DefinitionVisitor {
 
+        /**
+         * visit file start
+         * @param url url
+         */
         void visitFileStart(String url);
 
+        /**
+         * visit definition
+         * @param name name
+         * @param value value
+         * @param url url
+         */
         void visitDefinition(String name, String value, String url);
 
+        /**
+         * visit file end
+         */
         void visitFileEnd();
 
     }

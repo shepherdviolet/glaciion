@@ -313,11 +313,11 @@ class PropertiesLoader {
             LOGGER.error(loaderId + " | PropInject | Error while parsing string value '" +
                     stringValue + "' to " + fieldClass + ", So we can not inject property to method " +
                     implementationClass.getName() + "#" + method.getName() + ", The property comes from " +
-                    propertySource, null);
+                    propertySource, e);
             throw new IllegalArgumentException(loaderId + " | PropInject | Error while parsing string value '" +
                     stringValue + "' to " + fieldClass + ", So we can not inject property to method " +
                     implementationClass.getName() + "#" + method.getName() + ", The property comes from " +
-                    propertySource, null);
+                    propertySource, e);
         }
         //create injector
         method.setAccessible(true);
@@ -364,10 +364,10 @@ class PropertiesLoader {
         } catch (Exception e) {
             LOGGER.error(loaderId + " | PropInject | Error while parsing string value '" +
                     stringValue + "' to " + fieldClass + ", So we can not inject property to field '" + fieldName + "' of " +
-                    implementationClass.getName() + ", The property comes from " + propertySource, null);
+                    implementationClass.getName() + ", The property comes from " + propertySource, e);
             throw new IllegalArgumentException(loaderId + " | PropInject | Error while parsing string value '" +
                     stringValue + "' to " + fieldClass + ", So we can not inject property to field '" + fieldName + "' of " +
-                    implementationClass.getName() + ", The property comes from " + propertySource, null);
+                    implementationClass.getName() + ", The property comes from " + propertySource, e);
         }
         //create injector
         field.setAccessible(true);

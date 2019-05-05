@@ -71,8 +71,18 @@ class PropertiesInjector {
 
     interface Injector {
 
+        /**
+         * inject value into field
+         * @param instance bean instance
+         * @param loaderId loader id
+         * @throws Exception exception
+         */
         void inject(Object instance, String loaderId) throws Exception;
 
+        /**
+         * get field name
+         * @return field name
+         */
         String getFieldName();
 
     }

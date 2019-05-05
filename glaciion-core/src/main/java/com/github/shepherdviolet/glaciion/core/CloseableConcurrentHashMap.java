@@ -95,4 +95,14 @@ class CloseableConcurrentHashMap<K, V> extends ConcurrentHashMap<K, V> implement
         }
         return super.putIfAbsent(key, value);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
 }

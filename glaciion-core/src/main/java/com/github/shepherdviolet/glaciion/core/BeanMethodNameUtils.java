@@ -95,13 +95,7 @@ class BeanMethodNameUtils {
         boolean isSecondCharLowerCase = true;
         if (fieldNameChars.length > 1){
             secondChar = fieldNameChars[1];
-            if (secondChar > 64 && secondChar < 91) {
-                isSecondCharLowerCase = false;
-            } else if (secondChar > 96 && secondChar < 123){
-                isSecondCharLowerCase = true;
-            } else {
-                isSecondCharLowerCase = true;
-            }
+            isSecondCharLowerCase = secondChar <= 64 || secondChar >= 91;
         }
 
         if (isFirstCharLowerCase && isSecondCharLowerCase){

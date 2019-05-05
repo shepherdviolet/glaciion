@@ -26,24 +26,69 @@ package com.github.shepherdviolet.glaciion.api.interfaces;
  */
 public interface SpiLogger {
 
+    /**
+     * trace
+     * @param msg msg
+     * @param t t
+     */
     void trace(String msg, Throwable t);
 
+    /**
+     * debug
+     * @param msg msg
+     * @param t t
+     */
     void debug(String msg, Throwable t);
 
+    /**
+     * info
+     * @param msg msg
+     * @param t t
+     */
     void info(String msg, Throwable t);
 
+    /**
+     * warn
+     * @param msg msg
+     * @param t t
+     */
     void warn(String msg, Throwable t);
 
+    /**
+     * error
+     * @param msg msg
+     * @param t t
+     */
     void error(String msg, Throwable t);
 
+    /**
+     * is trace enabled
+     * @return is trace enabled
+     */
     boolean isTraceEnabled();
 
+    /**
+     * is debug enabled
+     * @return is trace enabled
+     */
     boolean isDebugEnabled();
 
+    /**
+     * is info enabled
+     * @return is trace enabled
+     */
     boolean isInfoEnabled();
 
+    /**
+     * is warn enabled
+     * @return is trace enabled
+     */
     boolean isWarnEnabled();
 
+    /**
+     * is error enabled
+     * @return is trace enabled
+     */
     boolean isErrorEnabled();
 
 }
