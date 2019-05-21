@@ -51,6 +51,25 @@ SingleServiceLoader<SampleSingleService> loader = Glaciion.loadSingleService(Sam
 SampleSingleService instance = loader.get();
 ```
 
+* `注意! 不同的类加载器创建的服务加载器不是同一个, 它们获取到的服务实例也不是同一个!`
+* `Glaciion只保证同一个类加载器产生的服务加载器是同一个, 同一个服务加载器创建的服务实例是同一个, 如果你创建服务加载器时的类加载器不同, 服务实例也不是同一个`
+* `下面这种情况获取到的服务实例有可能是不同的:`
+
+```text
+class A {
+    void method1(){
+        //instance1不一定与instance2是同一个实例, 因为现场的ClassLoader可能不同, 所以SingleServiceLoader也不是同一个
+        SampleSingleService instance1 = Glaciion.loadSingleService(SampleSingleService.class).get();
+    }
+}
+class B {
+    void method2(){
+        //instance1不一定与instance2是同一个实例, 因为现场的ClassLoader可能不同, 所以SingleServiceLoader也不是同一个
+        SampleSingleService instance2 = Glaciion.loadSingleService(SampleSingleService.class).get();
+    }
+}
+```
+
 <br>
 
 ## 服务提供方

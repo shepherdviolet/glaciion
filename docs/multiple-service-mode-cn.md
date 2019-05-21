@@ -59,6 +59,25 @@ SampleMultipleService instance = loader.get("name");
 List<SampleMultipleService> instances = loader.getAll();
 ```
 
+* `注意! 不同的类加载器创建的服务加载器不是同一个, 它们获取到的服务实例也不是同一个!`
+* `Glaciion只保证同一个类加载器产生的服务加载器是同一个, 同一个服务加载器创建的服务实例是同一个, 如果你创建服务加载器时的类加载器不同, 服务实例也不是同一个`
+* `下面这种情况获取到的服务实例有可能是不同的:`
+
+```text
+class A {
+    void method1(){
+        //instance1不一定与instance2是同一个实例, 因为现场的ClassLoader可能不同, 所以MultipleServiceLoader也可能不同
+        SampleMultipleService instance1 = Glaciion.loadMultipleService(SampleMultipleService.class).get("name");
+    }
+}
+class B {
+    void method2(){
+        //instance1不一定与instance2是同一个实例, 因为现场的ClassLoader可能不同, 所以MultipleServiceLoader也可能不同
+        SampleMultipleService instance2 = Glaciion.loadMultipleService(SampleMultipleService.class).get("name");
+    }
+}
+```
+
 <br>
 
 ## 服务提供方

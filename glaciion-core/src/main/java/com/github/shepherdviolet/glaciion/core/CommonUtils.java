@@ -122,7 +122,9 @@ class CommonUtils {
                 flag = true;
             } else if (flag &&
                     !Glaciion.CLASS_NAME.equals(element.getClassName()) &&
-                    !PreLoader.CLASS_NAME.equals(element.getClassName())) {
+                    !PreLoader.CLASS_NAME.equals(element.getClassName()) &&
+                    !SingleServiceLoader.CLASS_NAME.equals(element.getClassName()) &&
+                    !MultipleServiceLoader.CLASS_NAME.equals(element.getClassName())) {
                 return element.getClassName() + "#" + element.getMethodName();
             }
         }

@@ -47,6 +47,7 @@ import static com.github.shepherdviolet.glaciion.core.Constants.*;
  */
 public class SingleServiceLoader<T> implements Closeable {
 
+    public static final String CLASS_NAME = SingleServiceLoader.class.getName();
     private static final SpiLogger LOGGER = LogUtils.getLogger();
 
     private static final ConcurrentHashMap<String, CloseableConcurrentHashMap<Class<?>, SingleServiceLoader<?>>> LOADER_CACHE = new ConcurrentHashMap<>();
