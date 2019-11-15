@@ -114,7 +114,7 @@ public class SingleServiceLoader<T> implements Closeable {
             }
         } else if (LOGGER.isInfoEnabled()) {
             LOGGER.info(loader.loaderId + " | Single-service Loader get from cache! " +
-                    interfaceClass.getName() + ", caller:" + CommonUtils.getCaller(SingleServiceLoader.class) +
+                    interfaceClass.getName() + ", caller:" + CommonUtils.getCaller() +
                     ", classloader:" + classloaderId, null);
         }
         return loader;
@@ -263,7 +263,7 @@ public class SingleServiceLoader<T> implements Closeable {
         //log
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(loaderId + " | Single-service Loader Loading Start: " + interfaceClass.getName() +
-                    ", caller:" + CommonUtils.getCaller(SingleServiceLoader.class) + ", classloader:" +
+                    ", caller:" + CommonUtils.getCaller() + ", classloader:" +
                     getClassLoaderId(classLoader) + ", doc:" + LOG_HOME_PAGE, null);
         }
         //check is interface

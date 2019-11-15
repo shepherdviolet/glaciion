@@ -1,0 +1,9 @@
+{
+  "library": [
+    "glaciion-api",
+    "glaciion-core"
+  ],
+  "test": [
+    "tests"
+  ]
+}

@@ -26,6 +26,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class CommonUtils {
@@ -113,22 +117,61 @@ class CommonUtils {
     /**
      * get method caller info
      */
-    static String getCaller(Class<?> currentClass) {
-        String current = currentClass.getName();
-        StackTraceElement[] elements = Thread.currentThread().getStackTrace();
-        boolean flag = false;
-        for (StackTraceElement element : elements) {
-            if (current.equals(element.getClassName())) {
-                flag = true;
-            } else if (flag &&
-                    !Glaciion.CLASS_NAME.equals(element.getClassName()) &&
-                    !PreLoader.CLASS_NAME.equals(element.getClassName()) &&
-                    !SingleServiceLoader.CLASS_NAME.equals(element.getClassName()) &&
-                    !MultipleServiceLoader.CLASS_NAME.equals(element.getClassName())) {
-                return element.getClassName() + "#" + element.getMethodName();
-            }
+    static String getCaller() {
+        StackTraceElement stackTraceElement = getMethodCaller(equalSkips, startsWithSkips);
+        if (stackTraceElement != null) {
+            return stackTraceElement.getClassName() + "#" + stackTraceElement.getMethodName();
         }
         return "unknown#unknown";
+    }
+
+    private static Set<String> equalSkips = new HashSet<>(Arrays.asList(
+            CommonUtils.class.getName(),
+            Glaciion.CLASS_NAME,
+            PreLoader.CLASS_NAME,
+            SingleServiceLoader.CLASS_NAME,
+            MultipleServiceLoader.CLASS_NAME
+
+    ));
+
+    private static Collection<String> startsWithSkips = Arrays.asList(
+            "org.springframework.cglib.proxy.Proxy$ProxyImpl$$"
+    );
+
+    private static StackTraceElement getMethodCaller(Set<String> equalSkips, Collection<String> startsWithSkips) {
+        //获取当前堆栈
+        StackTraceElement[] elements = new Throwable().getStackTrace();
+        //跳过头两个元素(getCaller方法和调用getCaller的方法)
+        if (elements != null && elements.length > 2) {
+            //遍历堆栈
+            int i = 2;
+            for (; i < elements.length; i++) {
+                //当前元素
+                StackTraceElement element = elements[i];
+                //如果类名与skipEquals中的一个相同, 则跳过该元素查找下一个
+                if (equalSkips != null && equalSkips.contains(element.getClassName())) {
+                    continue;
+                }
+                //如果类名是skipStarts中的任意一个作为开头的, 则跳过该元素查找下一个
+                if (startsWithSkips != null && isStackTraceStartsWithSkips(startsWithSkips, element)) {
+                    continue;
+                }
+                //如果未跳过则当前元素就是调用者
+                return element;
+            }
+        }
+        //找不到调用者
+        return null;
+    }
+
+    private static boolean isStackTraceStartsWithSkips(Collection<String> startsWithSkips, StackTraceElement element) {
+        String className = element.getClassName();
+        for (String skipStart : startsWithSkips) {
+            if (skipStart != null && className.startsWith(skipStart)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }
