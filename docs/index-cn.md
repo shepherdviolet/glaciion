@@ -39,7 +39,7 @@ dependencies {
 
 ```maven
     <dependency>    
-        <groupId>com.github.shepherdviolet</groupId>
+        <groupId>com.github.shepherdviolet.glaciion2</groupId>
         <artifactId>glaciion-core</artifactId>
         <version>version</version> 
     </dependency>
