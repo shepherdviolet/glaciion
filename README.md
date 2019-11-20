@@ -23,7 +23,7 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    compile 'com.github.shepherdviolet:glaciion-core:version'
+    compile 'com.github.shepherdviolet.glaciion2:glaciion-core:version'
 }
 ```
 
