@@ -150,8 +150,8 @@ public class PreLoader {
                 if (FLAG_PRELOAD_CHECKSUM) {
                     checkSumBuilder.append(report);
                 }
-                if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info("? | Preload | Loaded " + report, null);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("? | Preload | Loaded " + report, null);
                 }
             }
             for (MultipleServiceLoader<?> loader: multipleServiceLoaders) {
@@ -159,8 +159,8 @@ public class PreLoader {
                 if (FLAG_PRELOAD_CHECKSUM) {
                     checkSumBuilder.append(report);
                 }
-                if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info("? | Preload | Loaded " + report, null);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("? | Preload | Loaded " + report, null);
                 }
             }
             if (FLAG_PRELOAD_CHECKSUM) {

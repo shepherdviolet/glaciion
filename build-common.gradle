@@ -39,7 +39,7 @@ subprojects {
 }
 
 // 库工程通用配置 (根据组别筛选)
-configure(subprojects.findAll { it.PROJECT_GROUP == 'library' }) {
+configure(subprojects.findAll { it.PROJECT_GROUP in ['library'] }) {
 
     apply plugin: 'java-library'
 //    apply plugin: 'java'
