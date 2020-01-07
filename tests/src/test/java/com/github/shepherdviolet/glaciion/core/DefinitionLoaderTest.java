@@ -21,6 +21,8 @@ package com.github.shepherdviolet.glaciion.core;
 
 import org.junit.Test;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -38,9 +40,15 @@ public class DefinitionLoaderTest extends AbstractTest {
                 "com.github.shepherdviolet.glaciion.test.SampleService",
                 ClassUtils.getDefaultClassLoader(),
                 "0");
+        Collections.sort(result, new Comparator<SingleDefinition>() {
+            @Override
+            public int compare(SingleDefinition o1, SingleDefinition o2) {
+                return o1.toString().hashCode() - o2.toString().hashCode();
+            }
+        });
         assertEquals("[" +
-                        "SingleDefinition{interfaceType='com.github.shepherdviolet.glaciion.test.SampleService', implementationType='com.github.shepherdviolet.glaciion.test.SampleServiceImpl2', priority=1}, " +
-                        "SingleDefinition{interfaceType='com.github.shepherdviolet.glaciion.test.SampleService', implementationType='com.github.shepherdviolet.glaciion.test.SampleServiceImpl1', priority=0}" +
+                        "SingleDefinition{interfaceType='com.github.shepherdviolet.glaciion.test.SampleService', implementationType='com.github.shepherdviolet.glaciion.test.SampleServiceImpl1', priority=0}, " +
+                        "SingleDefinition{interfaceType='com.github.shepherdviolet.glaciion.test.SampleService', implementationType='com.github.shepherdviolet.glaciion.test.SampleServiceImpl2', priority=1}" +
                         "]",
                 String.valueOf(result));
     }
@@ -51,23 +59,29 @@ public class DefinitionLoaderTest extends AbstractTest {
                 "com.github.shepherdviolet.glaciion.test.SamplePlugin",
                 ClassUtils.getDefaultClassLoader(),
                 "0");
+        Collections.sort(result, new Comparator<MultipleDefinition>() {
+            @Override
+            public int compare(MultipleDefinition o1, MultipleDefinition o2) {
+                return o1.toString().hashCode() - o2.toString().hashCode();
+            }
+        });
         assertEquals("[" +
+                        "MultipleDefinition{isDisable=true, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl2', rank=1}, " +
+                        "MultipleDefinition{isDisable=false, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl5', rank=1}, " +
+                        "MultipleDefinition{isDisable=false, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl7', rank=1}, " +
                         "MultipleDefinition{isDisable=false, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl2', rank=1}, " +
-                        "MultipleDefinition{isDisable=false, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl1', rank=1}, " +
-                        "MultipleDefinition{isDisable=true, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl1', rank=1}, " +
                         "MultipleDefinition{isDisable=false, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl2', rank=2}, " +
                         "MultipleDefinition{isDisable=true, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl6', rank=1}, " +
-                        "MultipleDefinition{isDisable=false, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl4', rank=1}, " +
-                        "MultipleDefinition{isDisable=true, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl5', rank=1}, " +
-                        "MultipleDefinition{isDisable=false, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl3', rank=1}, " +
-                        "MultipleDefinition{isDisable=true, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl2', rank=1}, " +
-                        "MultipleDefinition{isDisable=false, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl6', rank=2}, " +
                         "MultipleDefinition{isDisable=true, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl1', rank=1}, " +
-                        "MultipleDefinition{isDisable=false, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl8', rank=1}, " +
-                        "MultipleDefinition{isDisable=false, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl7', rank=1}, " +
+                        "MultipleDefinition{isDisable=true, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl1', rank=1}, " +
+                        "MultipleDefinition{isDisable=false, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl4', rank=1}, " +
                         "MultipleDefinition{isDisable=false, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl6', rank=1}, " +
-                        "MultipleDefinition{isDisable=false, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl5', rank=1}, " +
-                        "MultipleDefinition{isDisable=true, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl5', rank=1}" +
+                        "MultipleDefinition{isDisable=false, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl6', rank=2}, " +
+                        "MultipleDefinition{isDisable=false, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl1', rank=1}, " +
+                        "MultipleDefinition{isDisable=true, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl5', rank=1}, " +
+                        "MultipleDefinition{isDisable=true, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl5', rank=1}, " +
+                        "MultipleDefinition{isDisable=false, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl8', rank=1}, " +
+                        "MultipleDefinition{isDisable=false, interfaceType='com.github.shepherdviolet.glaciion.test.SamplePlugin', implementationType='com.github.shepherdviolet.glaciion.test.SamplePluginImpl3', rank=1}" +
                         "]",
                 String.valueOf(result));
     }
@@ -78,6 +92,12 @@ public class DefinitionLoaderTest extends AbstractTest {
                 "com.github.shepherdviolet.glaciion.test.SampleServiceImpl2",
                 ClassUtils.getDefaultClassLoader(),
                 "0");
+        Collections.sort(result, new Comparator<PropertiesDefinition>() {
+            @Override
+            public int compare(PropertiesDefinition o1, PropertiesDefinition o2) {
+                return o1.toString().hashCode() - o2.toString().hashCode();
+            }
+        });
         assertEquals("[" +
                         "PropertiesDefinition{bindType='com.github.shepherdviolet.glaciion.test.SampleServiceImpl2', priority=1, properties={dateFormat=yyyy-MM-dd HH:mm:ss.SSS, logEnabled=true}}, " +
                         "PropertiesDefinition{bindType='com.github.shepherdviolet.glaciion.test.SampleServiceImpl2', priority=2, properties={dateFormat=yyyy-MM-dd HH:mm:ss, logEnabled=false}}" +

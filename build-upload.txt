@@ -85,9 +85,9 @@ configure(subprojects.findAll { it.name.startsWith('glaciion') }) {
                     authentication(userName: private_user, password: private_password)
                 }
 
-//				repository(url: "http://localhost:8081/nexus/content/repositories/reponame/") {
-//					authentication(userName: 'name', password: 'password')
-//				}
+//                repository(url: "http://localhost:8081/nexus/content/repositories/reponame/") {
+//                    authentication(userName: 'name', password: 'password')
+//                }
 
             } else {
 
