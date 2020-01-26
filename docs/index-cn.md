@@ -117,12 +117,14 @@ dependencies {
 
 ### SLF4J日志
 
-* 包路径`com.github.shepherdviolet.glaciion`
+* 日志包路径`com.github.shepherdviolet.glaciion`
 * 推荐级别`INFO`
+* 如果遇到问题, 请将日志级别调至`DEBUG`或`TRACE`
 
 ### System.out日志
 
 * 默认日志级别为`OFF`
+* 如果遇到问题, 请将日志级别调至`DEBUG`或`TRACE`
 * 通过启动参数调整日志级别
 
 ```text

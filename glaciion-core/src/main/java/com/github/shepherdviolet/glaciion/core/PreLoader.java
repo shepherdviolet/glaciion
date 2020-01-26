@@ -122,8 +122,8 @@ public class PreLoader {
     }
 
     private static void preload0(ClassLoader classLoader, String classloaderId){
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("? | Preload | Preloading Start! classloader:" + classloaderId, null);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("? | Preload | Preloading Start! classloader:" + classloaderId, null);
         }
         Map<Class<?>, Boolean> interfaces = InterfaceLoader.get(classLoader);
         if (interfaces.size() <= 0 && LOGGER.isInfoEnabled()) {
@@ -141,7 +141,7 @@ public class PreLoader {
             }
         }
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("? | Preload | Preloading Complete! ", null);
+            LOGGER.info("? | Preload | Preloading Complete! classloader:" + classloaderId, null);
         }
         if (LOGGER.isInfoEnabled() || FLAG_PRELOAD_CHECKSUM) {
             StringBuilder checkSumBuilder = new StringBuilder();

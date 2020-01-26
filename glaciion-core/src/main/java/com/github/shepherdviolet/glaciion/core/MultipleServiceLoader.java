@@ -114,8 +114,8 @@ public class MultipleServiceLoader<T> implements Closeable {
             if (previous != null) {
                 loader = previous;
             }
-        } else if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(loader.loaderId + " | Multiple-service Loader get from cache! " +
+        } else if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(loader.loaderId + " | Multiple-service Loader get from cache! " +
                     interfaceClass.getName() + ", caller:" + CommonUtils.getCaller() +
                     ", classloader:" + classloaderId, null);
         }
@@ -233,8 +233,8 @@ public class MultipleServiceLoader<T> implements Closeable {
     @Override
     public void close() throws IOException {
         closed.set(true);
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(loaderId + " | Multiple-service Loader Closed!", null);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(loaderId + " | Multiple-service Loader Closed!", null);
         }
     }
 
@@ -439,6 +439,7 @@ public class MultipleServiceLoader<T> implements Closeable {
         });
         //check duplicate names
         Map<String, InstanceBuilder<T>> nameMap = new HashMap<>(instanceBuilders.size());
+        int index = 0;
         for (InstanceBuilder<T> instanceBuilder : instanceBuilders) {
             //check duplicate name
             InstanceBuilder<T> previousOne;
@@ -452,14 +453,13 @@ public class MultipleServiceLoader<T> implements Closeable {
             }
             //log
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(loaderId + " | Service Enabled: " + instanceBuilder.implementationClass.getName() +
+                LOGGER.info(loaderId + " | Service Enabled: " + index++ + " " + instanceBuilder.implementationClass.getName() +
                         (instanceBuilder.name != null ? ", name:" + instanceBuilder.name : "") +
                         (duplicateFlag ? "(duplicated, can't get by name)" : "") +
                         ", prop:" + instanceBuilder.propertiesInjector +
                         ", priority:" + instanceBuilder.priority +
-                        ", impl enabled by " + instanceBuilder.enabledReason +
-                        (instanceBuilder.propertiesInjector != null ?
-                                (", prop selected by " + instanceBuilder.propertiesInjector.getSelectReason()) : ""),
+                        (LOGGER.isDebugEnabled() ? ", impl enabled by " + instanceBuilder.enabledReason : "") +
+                        (LOGGER.isDebugEnabled() && instanceBuilder.propertiesInjector != null ? (", prop selected by " + instanceBuilder.propertiesInjector.getSelectReason()) : ""),
                         null);
             }
             //record name

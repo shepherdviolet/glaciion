@@ -26,6 +26,8 @@ package com.github.shepherdviolet.glaciion.api.exceptions;
  */
 public class IllegalDefinitionException extends RuntimeException {
 
+    private static final long serialVersionUID = -3387858075479298464L;
+
     public IllegalDefinitionException(String message) {
         super(message);
     }

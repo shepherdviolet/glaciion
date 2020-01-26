@@ -112,8 +112,8 @@ public class SingleServiceLoader<T> implements Closeable {
             if (previous != null) {
                 loader = previous;
             }
-        } else if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(loader.loaderId + " | Single-service Loader get from cache! " +
+        } else if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(loader.loaderId + " | Single-service Loader get from cache! " +
                     interfaceClass.getName() + ", caller:" + CommonUtils.getCaller() +
                     ", classloader:" + classloaderId, null);
         }
@@ -200,8 +200,8 @@ public class SingleServiceLoader<T> implements Closeable {
     @Override
     public void close() throws IOException {
         closed.set(true);
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(loaderId + " | Single-service Loader Closed!", null);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(loaderId + " | Single-service Loader Closed!", null);
         }
     }
 
@@ -304,11 +304,11 @@ public class SingleServiceLoader<T> implements Closeable {
         propertiesInjector = PropertiesLoader.load(implementationClass, classLoader, loaderId);
         //log
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(loaderId + " | Single-service Loader Loading Completed! " +
-                    interfaceClass.getName() + ", impl:" + implementationClass.getName() +
+            LOGGER.info(loaderId + " | Single-service Loader Loading Completed! " + interfaceClass.getName() +
+                    ", impl:" + implementationClass.getName() +
                     (propertiesInjector != null ? ", prop:" + propertiesInjector : "") +
-                    ", impl selected by " + selectReason +
-                    (propertiesInjector != null ? ", prop selected by " + propertiesInjector.getSelectReason() : ""), null);
+                    (LOGGER.isDebugEnabled() ? ", impl selected by " + selectReason : "") +
+                    (LOGGER.isDebugEnabled() && propertiesInjector != null ? ", prop selected by " + propertiesInjector.getSelectReason() : ""), null);
         }
         initialized = true;
     }

@@ -126,12 +126,14 @@ the interface, and provide a backward compatible approach.
 
 ### SLF4J Logger
 
-* Package `com.github.shepherdviolet.glaciion`
+* Logger Package `com.github.shepherdviolet.glaciion`
 * Recommended level `INFO`
+* If you need to troubleshoot, adjust the log level to `DEBUG` or `TRACE`
 
 ### System.out Logger
 
 * The default log level is `OFF`
+* If you need to troubleshoot, adjust the log level to `DEBUG` or `TRACE`
 * Adjust the log level by VM option
 
 ```text

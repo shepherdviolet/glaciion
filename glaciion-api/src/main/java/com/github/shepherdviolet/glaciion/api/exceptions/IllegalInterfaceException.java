@@ -26,6 +26,8 @@ package com.github.shepherdviolet.glaciion.api.exceptions;
  */
 public class IllegalInterfaceException extends RuntimeException {
 
+    private static final long serialVersionUID = 5939752995507799753L;
+
     public IllegalInterfaceException(String message) {
         super(message);
     }
