@@ -1,7 +1,9 @@
 # Glaciion 2.0.1
 
 * A library of Java Service Provider Interface
-* Git: https://github.com/shepherdviolet/glaciion
+* [Github Home](https://github.com/shepherdviolet/glaciion)
+* [Search in Maven Central](https://search.maven.org/search?q=g:com.github.shepherdviolet.glaciion2)
+* [PGP Key](http://pool.sks-keyservers.net/pks/lookup?op=vindex&fingerprint=on&search=0x90998B78AABD6E96)
 
 ## What's SPI and Glaciion?
 
@@ -31,6 +33,6 @@ dependencies {
     <dependency>    
         <groupId>com.github.shepherdviolet.glaciion2</groupId>
         <artifactId>glaciion-core</artifactId>
-        <version>version</version> 
+        <version>?</version> 
     </dependency>
 ```

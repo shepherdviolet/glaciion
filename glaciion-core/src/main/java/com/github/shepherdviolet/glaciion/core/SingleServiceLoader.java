@@ -114,8 +114,7 @@ public class SingleServiceLoader<T> implements Closeable {
             }
         } else if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(loader.loaderId + " | Single-service Loader get from cache! " +
-                    interfaceClass.getName() + ", caller:" + CommonUtils.getCaller() +
-                    ", classloader:" + classloaderId, null);
+                    interfaceClass.getName() + ", classloader:" + classloaderId, null);
         }
         return loader;
     }
@@ -245,7 +244,8 @@ public class SingleServiceLoader<T> implements Closeable {
             LOGGER.info(loaderId + " | Single-service Instance Created! " +
                     interfaceClass.getName() + ", impl:" + implementationClass.getName() +
                     (finalInstance instanceof ServiceProxy ? "<CompatByProxy>" : "") +
-                    (propertiesInjector != null ? ", prop:" + propertiesInjector : ""), null);
+                    (propertiesInjector != null ? ", prop:" + propertiesInjector : "") +
+                    ", caller:" + CommonUtils.getCaller(), null);
         }
         //creating completed
         if (instance instanceof InitializableImplementation) {
@@ -261,10 +261,9 @@ public class SingleServiceLoader<T> implements Closeable {
     private void load(){
         String selectReason;
         //log
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(loaderId + " | Single-service Loader Loading Start: " + interfaceClass.getName() +
-                    ", caller:" + CommonUtils.getCaller() + ", classloader:" +
-                    getClassLoaderId(classLoader) + ", doc:" + LOG_HOME_PAGE, null);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(loaderId + " | Single-service Loading Start: " + interfaceClass.getName() +
+                    ", classloader:" + getClassLoaderId(classLoader), null);
         }
         //check is interface
         if (!interfaceClass.isInterface()) {
@@ -294,8 +293,8 @@ public class SingleServiceLoader<T> implements Closeable {
         //no properties
         if (implementationClass == null) {
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(loaderId + " | Single-service Loader Loading Failed! " + interfaceClass.getName() +
-                        ", implementation not found", null);
+                LOGGER.info(loaderId + " | Single-service Loading Failed! " + interfaceClass.getName() +
+                        ", implementation not found, classloader:" + getClassLoaderId(classLoader), null);
             }
             initialized = true;
             return;
@@ -304,9 +303,10 @@ public class SingleServiceLoader<T> implements Closeable {
         propertiesInjector = PropertiesLoader.load(implementationClass, classLoader, loaderId);
         //log
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(loaderId + " | Single-service Loader Loading Completed! " + interfaceClass.getName() +
+            LOGGER.info(loaderId + " | Single-service Loading Completed! " + interfaceClass.getName() +
                     ", impl:" + implementationClass.getName() +
                     (propertiesInjector != null ? ", prop:" + propertiesInjector : "") +
+                    ", classloader:" + getClassLoaderId(classLoader) +
                     (LOGGER.isDebugEnabled() ? ", impl selected by " + selectReason : "") +
                     (LOGGER.isDebugEnabled() && propertiesInjector != null ? ", prop selected by " + propertiesInjector.getSelectReason() : ""), null);
         }

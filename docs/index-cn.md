@@ -41,7 +41,7 @@ dependencies {
     <dependency>    
         <groupId>com.github.shepherdviolet.glaciion2</groupId>
         <artifactId>glaciion-core</artifactId>
-        <version>version</version> 
+        <version>?</version> 
     </dependency>
 ```
 
