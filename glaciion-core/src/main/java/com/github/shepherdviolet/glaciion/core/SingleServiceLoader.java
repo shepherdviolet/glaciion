@@ -217,9 +217,9 @@ public class SingleServiceLoader<T> implements Closeable {
         try {
             instance = InstantiationUtils.newInstance(implementationClass);
         } catch (Exception e) {
-            LOGGER.error(loaderId + " | Error while instantiating single-service class " +
+            LOGGER.error(loaderId + " | Single-service Instance Create Failed! Error while instantiating class " +
                     implementationClass.getName() + " (" + interfaceClass.getName() + ")", e);
-            throw new IllegalImplementationException(loaderId + " | Error while instantiating single-service class " +
+            throw new IllegalImplementationException(loaderId + " | Single-service Instance Create Failed! Error while instantiating class " +
                     implementationClass.getName() + " (" + interfaceClass.getName() + ")", e);
         }
         //inject properties
@@ -227,9 +227,9 @@ public class SingleServiceLoader<T> implements Closeable {
             try {
                 propertiesInjector.inject(instance, loaderId);
             } catch (Exception e) {
-                LOGGER.error(loaderId + " | Error while injecting properties to single-service " +
+                LOGGER.error(loaderId + " | Single-service Instance Create Failed! Error while injecting properties to service " +
                         implementationClass.getName() + " (" + interfaceClass.getName() + ")", e);
-                throw new RuntimeException(loaderId + " | Error while injecting properties to single-service " +
+                throw new IllegalImplementationException(loaderId + " | Single-service Instance Create Failed! Error while injecting properties to service " +
                         implementationClass.getName() + " (" + interfaceClass.getName() + ")", e);
             }
         }
@@ -239,6 +239,19 @@ public class SingleServiceLoader<T> implements Closeable {
         }
         //build proxy if needed
         T finalInstance = ProxyUtils.buildProxyIfNeeded(classLoader, interfaceClass, instance, loaderId);
+        //creating completed
+        if (instance instanceof InitializableImplementation) {
+            try {
+                ((InitializableImplementation) instance).onServiceCreated();
+            } catch (Throwable t) {
+                LOGGER.error(loaderId + " | Single-service Instance Create Failed! Error while initializing (invoke onServiceCreated) " +
+                        implementationClass.getName() + " (" + interfaceClass.getName() + ")", t);
+                throw new IllegalImplementationException(loaderId + " | Single-service Instance Create Failed! Error while initializing (invoke onServiceCreated) " +
+                        implementationClass.getName() + " (" + interfaceClass.getName() + ")", t);
+            }
+        }
+        //set instance
+        this.instance = finalInstance;
         //log
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(loaderId + " | Single-service Instance Created! " +
@@ -247,12 +260,6 @@ public class SingleServiceLoader<T> implements Closeable {
                     (propertiesInjector != null ? ", prop:" + propertiesInjector : "") +
                     ", caller:" + CommonUtils.getCaller(), null);
         }
-        //creating completed
-        if (instance instanceof InitializableImplementation) {
-            ((InitializableImplementation) instance).onServiceCreated();
-        }
-        //set instance
-        this.instance = finalInstance;
     }
 
     /**

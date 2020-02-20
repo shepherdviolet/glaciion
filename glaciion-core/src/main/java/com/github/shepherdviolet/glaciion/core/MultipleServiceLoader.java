@@ -252,9 +252,9 @@ public class MultipleServiceLoader<T> implements Closeable {
             try {
                 instance = InstantiationUtils.newInstance(instanceBuilder.implementationClass);
             } catch (Exception e) {
-                LOGGER.error(loaderId + " | Error while instantiating multiple-service class " +
+                LOGGER.error(loaderId + " | Multiple-service Instance Create Failed! Error while instantiating class " +
                         instanceBuilder.implementationClass.getName() + " (" + interfaceClass.getName() + ")", e);
-                throw new IllegalImplementationException(loaderId + " | Error while instantiating multiple-service class " +
+                throw new IllegalImplementationException(loaderId + " | Multiple-service Instance Create Failed! Error while instantiating class " +
                         instanceBuilder.implementationClass.getName() + " (" + interfaceClass.getName() + ")", e);
             }
             //inject properties
@@ -262,9 +262,9 @@ public class MultipleServiceLoader<T> implements Closeable {
                 try {
                     instanceBuilder.propertiesInjector.inject(instance, loaderId);
                 } catch (Exception e) {
-                    LOGGER.error(loaderId + " | Error while injecting properties to multiple-service " +
+                    LOGGER.error(loaderId + " | Multiple-service Instance Create Failed! Error while injecting properties to service " +
                             instanceBuilder.implementationClass.getName() + " (" + interfaceClass.getName() + ")", e);
-                    throw new IllegalImplementationException(loaderId + " | Error while injecting properties to multiple-service " +
+                    throw new IllegalImplementationException(loaderId + " | Multiple-service Instance Create Failed! Error while injecting properties to service " +
                             instanceBuilder.implementationClass.getName() + " (" + interfaceClass.getName() + ")", e);
                 }
             }
@@ -274,22 +274,29 @@ public class MultipleServiceLoader<T> implements Closeable {
             }
             //build proxy if needed
             T finalInstance = ProxyUtils.buildProxyIfNeeded(classLoader, interfaceClass, instance, loaderId);
-            //log
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(loaderId + " | Multiple-service Created: " + index++ + " " +
-                        instanceBuilder.implementationClass.getName() + (finalInstance instanceof ServiceProxy ? "<CompatByProxy>" : "") +
-                        (instanceBuilder.isNameValid ? ", bind name:" + instanceBuilder.name : "") +
-                        (instanceBuilder.propertiesInjector != null ? ", prop:" + instanceBuilder.propertiesInjector : ""), null);
-            }
             //creating completed
             if (instance instanceof InitializableImplementation) {
-                ((InitializableImplementation) instance).onServiceCreated();
+                try {
+                    ((InitializableImplementation) instance).onServiceCreated();
+                } catch (Throwable t) {
+                    LOGGER.error(loaderId + " | Multiple-service Instance Create Failed! Error while initializing (invoke onServiceCreated) " +
+                            instanceBuilder.implementationClass.getName() + " (" + interfaceClass.getName() + ")", t);
+                    throw new IllegalImplementationException(loaderId + " | Multiple-service Instance Create Failed! Error while initializing (invoke onServiceCreated) " +
+                            instanceBuilder.implementationClass.getName() + " (" + interfaceClass.getName() + ")", t);
+                }
             }
             //add to list
             instanceList.add(finalInstance);
             //put to map
             if (instanceBuilder.isNameValid) {
                 instanceMap.put(instanceBuilder.name, finalInstance);
+            }
+            //log
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(loaderId + " | Multiple-service Instance: " + index++ + " " +
+                        instanceBuilder.implementationClass.getName() + (finalInstance instanceof ServiceProxy ? "<CompatByProxy>" : "") +
+                        (instanceBuilder.isNameValid ? ", bind name:" + instanceBuilder.name : "") +
+                        (instanceBuilder.propertiesInjector != null ? ", prop:" + instanceBuilder.propertiesInjector : ""), null);
             }
         }
 
