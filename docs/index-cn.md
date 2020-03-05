@@ -33,13 +33,13 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    compile 'com.github.shepherdviolet.glaciion2:glaciion-core:version'
+    compile 'com.github.shepherdviolet:glaciion-core:?'
 }
 ```
 
 ```maven
     <dependency>    
-        <groupId>com.github.shepherdviolet.glaciion2</groupId>
+        <groupId>com.github.shepherdviolet</groupId>
         <artifactId>glaciion-core</artifactId>
         <version>?</version> 
     </dependency>
