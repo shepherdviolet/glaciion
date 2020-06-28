@@ -149,7 +149,7 @@ public class SingleServiceLoader<T> implements Closeable {
 
     private Class<T> implementationClass;
     private PropertiesInjector propertiesInjector;
-    private T instance;
+    private volatile T instance;
 
     private volatile boolean initialized = false;
     private volatile boolean cached = false;
