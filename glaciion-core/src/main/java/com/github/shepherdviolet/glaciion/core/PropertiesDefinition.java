@@ -29,10 +29,10 @@ import java.util.TreeMap;
  */
 class PropertiesDefinition {
 
-    private String bindType;
-    private String url;
+    private final String bindType;
+    private final String url;
     private int priority = 0;
-    private Map<String, String> properties = new TreeMap<>();
+    private final Map<String, String> properties = new TreeMap<>();
     private Integer propertiesHash;
 
     PropertiesDefinition(String bindType, String url) {

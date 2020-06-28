@@ -26,8 +26,8 @@ package com.github.shepherdviolet.glaciion.core;
  */
 class InterfaceDefinition {
 
-    private String interfaceType;
-    private String url;
+    private final String interfaceType;
+    private final String url;
     private Integer interfaceHash;
 
     InterfaceDefinition(String interfaceType, String url) {

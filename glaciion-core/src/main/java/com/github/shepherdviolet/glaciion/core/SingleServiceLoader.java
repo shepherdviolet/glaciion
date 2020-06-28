@@ -143,9 +143,9 @@ public class SingleServiceLoader<T> implements Closeable {
         return uninstall(ClassUtils.getDefaultClassLoader());
     }
 
-    private String loaderId = CommonUtils.generateLoaderId();
-    private Class<T> interfaceClass;
-    private ClassLoader classLoader;
+    private final String loaderId = CommonUtils.generateLoaderId();
+    private final Class<T> interfaceClass;
+    private final ClassLoader classLoader;
 
     private Class<T> implementationClass;
     private PropertiesInjector propertiesInjector;
@@ -153,7 +153,7 @@ public class SingleServiceLoader<T> implements Closeable {
 
     private volatile boolean initialized = false;
     private volatile boolean cached = false;
-    private volatile AtomicBoolean closed = new AtomicBoolean(false);
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
      * Load single service by custom classloader.
@@ -172,10 +172,10 @@ public class SingleServiceLoader<T> implements Closeable {
      * @return Service instance (Cached), Nullable
      */
     public T get(){
-        if (!initialized) {
-            throw new IllegalStateException(loaderId + " | The loader has not been initialized yet");
-        }
         if (!cached) {
+            if (!initialized) {
+                throw new IllegalStateException(loaderId + " | The loader has not been initialized yet");
+            }
             synchronized (this) {
                 if (!cached) {
                     instantiate();

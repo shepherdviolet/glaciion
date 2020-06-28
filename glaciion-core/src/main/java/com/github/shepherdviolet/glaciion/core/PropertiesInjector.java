@@ -33,7 +33,7 @@ import java.util.List;
  */
 class PropertiesInjector {
 
-    private List<Injector> injectors = new LinkedList<>();
+    private final List<Injector> injectors = new LinkedList<>();
     private String selectReason;
 
     /**
@@ -94,9 +94,9 @@ class PropertiesInjector {
 
         private static final SpiLogger LOGGER = LogUtils.getLogger();
 
-        private String fieldName;
-        private Method method;
-        private Object value;
+        private final String fieldName;
+        private final Method method;
+        private final Object value;
 
         MethodInjector(String fieldName, Method method, Object value) {
             this.fieldName = fieldName;
@@ -134,9 +134,9 @@ class PropertiesInjector {
 
         private static final SpiLogger LOGGER = LogUtils.getLogger();
 
-        private String fieldName;
-        private Field field;
-        private Object value;
+        private final String fieldName;
+        private final Field field;
+        private final Object value;
 
         FieldInjector(String fieldName, Field field, Object value) {
             this.fieldName = fieldName;

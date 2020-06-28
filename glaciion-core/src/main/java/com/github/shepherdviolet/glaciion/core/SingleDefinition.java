@@ -26,10 +26,10 @@ package com.github.shepherdviolet.glaciion.core;
  */
 class SingleDefinition {
 
-    private String interfaceType;
-    private String implementationType;
-    private int priority = 0;
-    private String url;
+    private final String interfaceType;
+    private final String implementationType;
+    private final int priority;
+    private final String url;
     private Integer implementationHash;
 
     SingleDefinition(String interfaceType, String implementationType, int priority, String url) {

@@ -26,11 +26,11 @@ package com.github.shepherdviolet.glaciion.core;
  */
 class MultipleDefinition {
 
-    private boolean isDisable;
-    private String interfaceType;
-    private String implementationType;
-    private int rank = 1;
-    private String url;
+    private final boolean isDisable;
+    private final String interfaceType;
+    private final String implementationType;
+    private final int rank;
+    private final String url;
     private Integer implementationHash;
 
     MultipleDefinition(boolean isDisable, String interfaceType, String implementationType, int rank, String url) {

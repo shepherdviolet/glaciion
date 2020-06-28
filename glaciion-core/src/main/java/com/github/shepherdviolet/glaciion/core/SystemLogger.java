@@ -43,9 +43,9 @@ class SystemLogger implements SpiLogger {
     private static final int ERROR = 1;
     private static final int OFF = 0;
 
-    private String timeFormat;
-    private int logLevel;
-    private ThreadLocal<SimpleDateFormat> formats = new ThreadLocal<>();
+    private final String timeFormat;
+    private final int logLevel;
+    private final ThreadLocal<SimpleDateFormat> formats = new ThreadLocal<>();
 
     SystemLogger() {
         String logLevelStr = System.getProperty(VMOPT_SYSTEM_LOGLEVEL, "OFF").toUpperCase();

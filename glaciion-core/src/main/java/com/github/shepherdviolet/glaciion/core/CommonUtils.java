@@ -118,14 +118,14 @@ class CommonUtils {
      * get method caller info
      */
     static String getCaller() {
-        StackTraceElement stackTraceElement = getMethodCaller(equalSkips, startsWithSkips);
+        StackTraceElement stackTraceElement = getMethodCaller(EQUAL_SKIPS, STARTS_WITH_SKIPS);
         if (stackTraceElement != null) {
             return stackTraceElement.getClassName() + "#" + stackTraceElement.getMethodName();
         }
         return "unknown#unknown";
     }
 
-    private static Set<String> equalSkips = new HashSet<>(Arrays.asList(
+    private static final Set<String> EQUAL_SKIPS = new HashSet<>(Arrays.asList(
             CommonUtils.class.getName(),
             Glaciion.CLASS_NAME,
             PreLoader.CLASS_NAME,
@@ -134,7 +134,7 @@ class CommonUtils {
 
     ));
 
-    private static Collection<String> startsWithSkips = Arrays.asList(
+    private static final Collection<String> STARTS_WITH_SKIPS = Arrays.asList(
             "org.springframework.cglib.proxy.Proxy$ProxyImpl$$"
     );
 

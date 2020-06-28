@@ -145,17 +145,17 @@ public class MultipleServiceLoader<T> implements Closeable {
         return uninstall(ClassUtils.getDefaultClassLoader());
     }
 
-    private String loaderId = CommonUtils.generateLoaderId();
-    private Class<T> interfaceClass;
-    private ClassLoader classLoader;
+    private final String loaderId = CommonUtils.generateLoaderId();
+    private final Class<T> interfaceClass;
+    private final ClassLoader classLoader;
 
     private List<InstanceBuilder<T>> instanceBuilders;
-    private List<T> instanceList = new ArrayList<>(16);
-    private Map<String, T> instanceMap = new HashMap<>(16);
+    private final List<T> instanceList = new ArrayList<>(16);
+    private final Map<String, T> instanceMap = new HashMap<>(16);
 
     private volatile boolean initialized = false;
     private volatile boolean cached = false;
-    private volatile AtomicBoolean closed = new AtomicBoolean(false);
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     private MultipleServiceLoader(Class<T> interfaceClass, ClassLoader classLoader) {
         this.interfaceClass = interfaceClass;
@@ -170,10 +170,10 @@ public class MultipleServiceLoader<T> implements Closeable {
      * @return Service instance (Cached), Nullable
      */
     public T get(String name) {
-        if (!initialized) {
-            throw new IllegalStateException(loaderId + " | The loader has not been initialized yet");
-        }
         if (!cached) {
+            if (!initialized) {
+                throw new IllegalStateException(loaderId + " | The loader has not been initialized yet");
+            }
             synchronized (this) {
                 if (!cached) {
                     instantiate();
@@ -189,10 +189,10 @@ public class MultipleServiceLoader<T> implements Closeable {
      * @return Service instances (ArrayList, Cached), Not null
      */
     public List<T> getAll(){
-        if (!initialized) {
-            throw new IllegalStateException(loaderId + " | The loader has not been initialized yet");
-        }
         if (!cached) {
+            if (!initialized) {
+                throw new IllegalStateException(loaderId + " | The loader has not been initialized yet");
+            }
             synchronized (this) {
                 if (!cached) {
                     instantiate();
@@ -208,7 +208,7 @@ public class MultipleServiceLoader<T> implements Closeable {
         StringBuilder stringBuilder = new StringBuilder("[multiple-service] ");
         stringBuilder.append(interfaceClass.getName()).append(" :");
         if (instanceBuilders != null) {
-            for (InstanceBuilder instanceBuilder : instanceBuilders) {
+            for (InstanceBuilder<?> instanceBuilder : instanceBuilders) {
                 stringBuilder.append("\n> ");
                 stringBuilder.append(instanceBuilder.implementationClass.getName());
                 if (instanceBuilder.isNameValid) {
@@ -245,7 +245,11 @@ public class MultipleServiceLoader<T> implements Closeable {
         if (instanceBuilders == null) {
             return;
         }
+
         int index = 0;
+        List<T> instanceList = new ArrayList<>(16);
+        Map<String, T> instanceMap = new HashMap<>(16);
+
         for (InstanceBuilder<T> instanceBuilder : instanceBuilders) {
             //create instance
             T instance;
@@ -299,6 +303,9 @@ public class MultipleServiceLoader<T> implements Closeable {
                         (instanceBuilder.propertiesInjector != null ? ", prop:" + instanceBuilder.propertiesInjector : ""), null);
             }
         }
+
+        this.instanceList.addAll(instanceList);
+        this.instanceMap.putAll(instanceMap);
 
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(loaderId + " | Multiple-service Instances Created! " + interfaceClass.getName() +
@@ -521,13 +528,13 @@ public class MultipleServiceLoader<T> implements Closeable {
      */
     private static class InstanceBuilder<T> {
 
-        private Class<T> implementationClass;
+        private final Class<T> implementationClass;
         private PropertiesInjector propertiesInjector;
-        private int priority;
-        private String name;
+        private final int priority;
+        private final String name;
 
-        private String url;
-        private String enabledReason;
+        private final String url;
+        private final String enabledReason;
         private Integer implementationHash;
 
         private boolean isNameValid = false;
