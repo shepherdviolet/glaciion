@@ -1,9 +1,9 @@
 {
-  "library": [
-    "glaciion-api",
-    "glaciion-core"
-  ],
-  "test": [
-    "tests"
-  ]
+  "library": {
+    "glaciion-api": "glaciion-api",
+    "glaciion-core": "glaciion-core"
+  },
+  "test": {
+    "tests": "tests"
+  }
 }
