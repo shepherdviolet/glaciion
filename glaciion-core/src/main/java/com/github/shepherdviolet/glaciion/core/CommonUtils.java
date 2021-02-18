@@ -72,8 +72,6 @@ class CommonUtils {
 
     /**
      * Digest file, get hash
-     *
-     * About suppressed warnings: The MD5 algorithm is only used for troubleshooting, no security risk
      */
     @SuppressWarnings({"lgtm[java/weak-cryptographic-algorithm]"})
     static String digest(InputStream inputStream, String type) throws IOException {
@@ -81,6 +79,7 @@ class CommonUtils {
             throw new NullPointerException("inputStream is null");
         }
         try {
+            // About suppressed warnings: The MD5 algorithm is only used for troubleshooting, no security risk
             MessageDigest cipher = MessageDigest.getInstance(type);
             byte[] buff = new byte[1024];
             int size;
