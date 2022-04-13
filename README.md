@@ -2,6 +2,8 @@
 
 [![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/shepherdviolet/glaciion.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/shepherdviolet/glaciion/context:java)
 
+* `No longer maintained, superseded by https://github.com/shepherdviolet/glacimon`
+* `不再维护, 请用新项目: https://github.com/shepherdviolet/glacimon`
 * A library of Java Service Provider Interface
 * [Github Home](https://github.com/shepherdviolet/glaciion)
 * [Search in Maven Central](https://search.maven.org/search?q=g:com.github.shepherdviolet)
